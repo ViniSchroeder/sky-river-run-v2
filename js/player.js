@@ -29,7 +29,7 @@ export class Player {
     const nx=this.x+(this.targetX-this.x)*Math.min(1,dt*11);
     const ny=this.y+(this.targetY-this.y)*Math.min(1,dt*11);
     this.tilt=Math.max(-.22,Math.min(.22,(nx-this.x)*.025));
-    this.x=nx;this.y=ny;this.invulnerable=Math.max(0,this.invulnerable-dt);
+    this.x=nx;this.y=ny;this.invulnerable=Math.max(0,this.invulnerable-dt);this.game.effects.trail(this.x,this.y+28);
     const newBounds=this.game.river.bounds(this.y,24);
     if(this.x<newBounds.left){this.x=newBounds.left;this.damage(8)}
     if(this.x>newBounds.right){this.x=newBounds.right;this.damage(8)}
@@ -45,7 +45,7 @@ export class Player {
     const blink=this.invulnerable>0&&Math.floor(this.invulnerable*18)%2;
     ctx.save();ctx.translate(this.x,this.y);ctx.rotate(this.tilt);ctx.globalAlpha=blink?.42:1;
     ctx.shadowColor="rgba(0,0,0,.48)";ctx.shadowBlur=14;ctx.shadowOffsetY=10;
-    const w=95,h=95;
+    const w=108,h=108;
     ctx.drawImage(this.sprite,-w/2,-h/2,w,h);
     ctx.restore();
   }

@@ -7,24 +7,25 @@ import {AudioSystem} from "./audio.js";
 
 const load=(src)=>{const i=new Image();i.src=src;return i};
 const sprites={
- player:load("./assets/sprites/player.png"),
- airplane:load("./assets/sprites/player.png"),
+ player:load("./assets/sprites/player_hd.png"),
+ airplane:load("./assets/sprites/player_hd.png"),
  helicopter:load("./assets/sprites/helicopter.png"),
  ufo:load("./assets/sprites/ufo.png"),
  bird:load("./assets/sprites/helicopter.png"),
  boat:load("./assets/sprites/boat.png"),
  submarine:load("./assets/sprites/submarine.png"),
  truck:load("./assets/sprites/truck.png"),
- explosion:load("./assets/sprites/explosion.png"),
+ explosion:load("./assets/sprites/explosion_sheet.png"),
  cloud:load("./assets/sprites/cloud.png"),
  water:load("./assets/sprites/water_strip.png"),
- bank:load("./assets/sprites/riverbank_strip.png")
+ bank:load("./assets/sprites/riverbank_hd.png"),
+ smoke:load("./assets/sprites/smoke.png")
 };
 
 class Game {
  constructor(){
   this.canvas=document.querySelector("#game");this.ctx=this.canvas.getContext("2d",{alpha:false});this.width=innerWidth;this.height=innerHeight;this.dpr=Math.min(devicePixelRatio||1,2);this.running=false;this.paused=false;this.time=0;this.score=0;this.speed=225;this.shake=0;this.record=Number(localStorage.getItem("sky-river-run-v2-record")||0);this.keys=new Set();this.firing=false;this.mobileFiring=false;this.fireTimer=0;this.bullets=[];this.pickups=[];this.pickupTimer=2;this.cloudTimer=7;
-  this.audio=new AudioSystem();this.river=new River(this,sprites.water,sprites.bank);this.effects=new Effects(this,sprites.explosion,sprites.cloud);this.player=new Player(this,sprites.player);this.enemies=new EnemySystem(this,sprites);this.ui=new UI(this);this.bind();this.resize();document.querySelector("#record").textContent=this.record?`Recorde: ${this.record}`:"";requestAnimationFrame(t=>this.loop(t));
+  this.audio=new AudioSystem();this.river=new River(this,sprites.water,sprites.bank);this.effects=new Effects(this,sprites.explosion,sprites.cloud,sprites.smoke);this.player=new Player(this,sprites.player);this.enemies=new EnemySystem(this,sprites);this.ui=new UI(this);this.bind();this.resize();document.querySelector("#record").textContent=this.record?`Recorde: ${this.record}`:"";requestAnimationFrame(t=>this.loop(t));
  }
  bind(){
   addEventListener("resize",()=>this.resize());
