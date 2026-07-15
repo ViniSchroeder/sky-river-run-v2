@@ -1,4 +1,4 @@
-# Sky River Run 2.1
+# Sky River Run 2.2
 
 Reestruturação completa do jogo com arquitetura modular e sprites.
 
@@ -43,12 +43,9 @@ Envie todo o conteúdo desta pasta, preservando as pastas.
 Na Vercel use Framework Preset `Other`, Root Directory `./` e nenhum comando de build.
 
 
-## Melhorias visuais da V2.1
-- Avião com sprite HD e maior contraste.
-- Água com textura, brilho e ondas.
-- Margens mais detalhadas.
-- Sombras reforçadas.
-- Explosões animadas em 8 quadros.
-- Fumaça de impacto e rastro.
-- Nuvens translúcidas com deriva.
-- HUD moderno e barra crítica pulsante.
+## V2.2
+- Barra de combustível corrigida no desktop e mobile.
+- Novo avião superior.
+- Itens sempre dentro do rio.
+- Combustível, bombas, reparo, escudo e moedas.
+- Progressão de níveis e dificuldade.

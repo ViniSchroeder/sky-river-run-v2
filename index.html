@@ -4,29 +4,31 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="theme-color" content="#061522">
-  <meta name="description" content="Sky River Run 2.1 — jogo arcade de avião.">
+  <meta name="description" content="Sky River Run 2.2 — jogo arcade de avião.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./css/styles.css">
-  <title>Sky River Run 2.1</title>
+  <title>Sky River Run 2.2</title>
 </head>
 <body>
   <canvas id="game" aria-label="Jogo Sky River Run"></canvas>
 
   <header id="hud" class="hud hidden">
     <div class="hud-panel status-panel">
-      <span class="hud-label">VIDA</span>
+      <div class="hud-row"><span class="hud-label">COMBUSTÍVEL</span><strong id="fuelText">100%</strong></div>
       <div class="life-bar"><i id="lifeBar"></i></div>
     </div>
     <div class="hud-panel">❤️ <span id="lives">3</span></div>
+    <div class="hud-panel">🛡️ <span id="shield">0</span></div>
     <div class="hud-panel">🔫 <span id="weapon">1</span></div>
     <div class="hud-panel">💣 <span id="bombs">0</span></div>
+    <div class="hud-panel">🪙 <span id="coins">0</span></div>
     <div class="hud-panel score"><span id="score">0</span></div>
   </header>
 
   <main id="menu" class="overlay">
     <section class="panel">
       <h1>Sky <span>River</span> Run</h1>
-      <p>Versão 2.1 com gráficos HD, água animada, fumaça e explosões aprimoradas.</p>
+      <p>Versão 2.2 com novo avião, combustível visual, itens especiais e progressão.</p>
       <p class="tips"><b>Desktop:</b> WASD/setas, segure Espaço para atirar, B para bomba, P para pausar.<br>
       <b>Celular:</b> arraste e mantenha o botão de tiro pressionado.</p>
       <button id="play" class="primary">JOGAR</button>

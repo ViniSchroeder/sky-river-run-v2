@@ -3,9 +3,9 @@ export class EnemySystem {
   constructor(game,sprites){this.game=game;this.sprites=sprites;this.items=[];this.trucks=[];this.timer=.7;this.lateral=3;this.water=4.5;this.bridge=8}
   reset(){this.items=[];this.trucks=[];this.timer=.7;this.lateral=3;this.water=4.5;this.bridge=8}
   make(type,x,y,movement="vertical"){const c=CFG[type];this.items.push({type,x,y,movement,hp:c.hp,points:c.points,size:c.size,vx:(Math.random()-.5)*90,phase:0,emerged:type!=="submarine",emerge:type==="submarine"?1+Math.random()*2.6:0,dead:false})}
-  spawnVertical(){const y=-80,b=this.game.river.bounds(y,40),r=Math.random();const type=r>.97?"ufo":r>.80?"helicopter":r>.48?"airplane":"bird";this.make(type,b.left+Math.random()*(b.right-b.left),y)}
+  spawnVertical(){const y=-80,b=this.game.river.bounds(y,62),r=Math.random();const type=r>.97?"ufo":r>.80?"helicopter":r>.48?"airplane":"bird";this.make(type,b.left+Math.random()*(b.right-b.left),y)}
   spawnLateral(){const r=Math.random(),type=r>.93?"ufo":r>.7?"helicopter":r>.4?"airplane":"bird",left=Math.random()<.5;this.make(type,left?-100:this.game.width+100,this.game.height*(.18+Math.random()*.5),"lateral");const e=this.items.at(-1);e.vx=(left?1:-1)*(130+Math.random()*100)}
-  spawnWater(){const y=-80,b=this.game.river.bounds(y,55),type=Math.random()<.68?"boat":"submarine";this.make(type,b.left+Math.random()*(b.right-b.left),y)}
+  spawnWater(){const y=-80,b=this.game.river.bounds(y,70),type=Math.random()<.68?"boat":"submarine";this.make(type,b.left+Math.random()*(b.right-b.left),y)}
   spawnTruck(){const y=-60,b=this.game.river.bounds(y);this.trucks.push({y,x:b.left,direction:1,speed:58+Math.random()*25,hp:3,points:165,dead:false})}
   update(dt){this.timer-=dt;this.lateral-=dt;this.water-=dt;this.bridge-=dt;if(this.timer<=0){this.spawnVertical();this.timer=.72+Math.random()*.7-Math.min(.28,this.game.time/100)}if(this.lateral<=0){this.spawnLateral();this.lateral=2.8+Math.random()*3.5}if(this.water<=0){this.spawnWater();this.water=4+Math.random()*4.5}if(this.bridge<=0){this.spawnTruck();this.bridge=8+Math.random()*5}
     for(const e of this.items){e.phase+=dt*7;if(e.movement==="lateral"){e.x+=e.vx*dt;e.y+=this.game.speed*.1*dt}else{e.y+=this.game.speed*dt;e.x+=e.vx*dt*.25}if(e.type==="submarine"&&!e.emerged){e.emerge-=dt;if(e.emerge<=0)e.emerged=true}}
