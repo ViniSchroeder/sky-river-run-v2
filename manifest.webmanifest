@@ -1,0 +1,10 @@
+{
+  "name": "Sky River Run",
+  "short_name": "SkyRiver",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#071827",
+  "theme_color": "#071827",
+  "description": "Jogo arcade de avião com rio, combustível, inimigos e pontes.",
+  "icons": []
+}

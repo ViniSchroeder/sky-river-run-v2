@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#071827">
+  <meta name="description" content="Sky River Run — jogo de avião arcade para navegador e celular.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./styles.css">
+  <title>Sky River Run</title>
+</head>
+<body>
+  <canvas id="game" aria-label="Área do jogo Sky River Run"></canvas>
+
+  <header id="hud" class="hud hidden" aria-live="polite">
+    <section class="hud-card fuel-card">
+      <div class="hud-row">
+        <span>COMBUSTÍVEL</span>
+        <strong id="fuelText">100%</strong>
+      </div>
+      <div class="fuel-bar"><i id="fuelBar"></i></div>
+    </section>
+    <div id="lives" class="hud-card">❤️ 3</div>
+    <div id="weapon" class="hud-card">🔫 1</div>
+    <div id="bombCount" class="hud-card">💣 0</div>
+    <div id="score" class="hud-card score-card">0</div>
+  </header>
+
+  <main id="menu" class="overlay">
+    <section class="panel">
+      <h1>Sky <span>River</span> Run</h1>
+      <p>
+        Pilote pelo rio, destrua obstáculos, colete combustível e use bombas
+        para abrir passagem pelas pontes.
+      </p>
+      <p class="instructions">
+        <b>Desktop:</b> WASD ou setas para pilotar, segure Espaço para tiro contínuo e B para usar bomba.<br>
+        <b>Celular:</b> arraste para pilotar e use os botões de tiro e bomba.
+      </p>
+      <button id="playButton" class="primary-button">JOGAR</button>
+      <p id="record" class="record"></p>
+    </section>
+  </main>
+
+  <section id="gameOver" class="overlay hidden">
+    <div class="panel">
+      <h1>GAME <span>OVER</span></h1>
+      <p>Pontuação: <strong id="finalScore">0</strong></p>
+      <p id="finalRecord" class="record"></p>
+      <button id="restartButton" class="primary-button">JOGAR NOVAMENTE</button>
+    </div>
+  </section>
+
+  <div id="message" class="game-message" aria-live="assertive"></div>
+
+  <div class="mobile-controls">
+    <button id="bombButton" class="round-button bomb-button hidden" aria-label="Usar bomba">💣</button>
+    <button id="fireButton" class="round-button fire-button hidden" aria-label="Atirar">🔥</button>
+  </div>
+
+  <button id="soundButton" class="sound-button" aria-label="Ativar ou desativar som">🔊</button>
+
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
