@@ -1,5 +1,6 @@
-const CACHE="sky-river-run-v2-2";
-const FILES=["./","./index.html","./css/styles.css","./js/game.js","./js/player.js","./js/enemies.js","./js/river.js","./js/effects.js","./js/ui.js","./js/audio.js","./manifest.webmanifest","./assets/sprites/player_v22.png","./assets/sprites/helicopter.png","./assets/sprites/ufo.png","./assets/sprites/boat.png","./assets/sprites/submarine.png","./assets/sprites/truck.png","./assets/sprites/explosion.png","./assets/sprites/cloud.png","./assets/sprites/water_strip.png"];
-self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES))));
-self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x))))));
-self.addEventListener("fetch",e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));
+const CACHE="sky-river-run-v3-0-3001";
+const FILES=["./","./index.html","./css/styles.css?v=3001","./js/game.js?v=3001","./js/player.js","./js/enemies.js","./js/river.js","./js/effects.js","./js/ui.js","./js/audio.js","./manifest.webmanifest",
+"./assets/sprites/player_pixel.png","./assets/sprites/player_left.png","./assets/sprites/player_right.png","./assets/sprites/helicopter_pixel.png","./assets/sprites/ufo_pixel.png","./assets/sprites/boat_pixel.png","./assets/sprites/submarine_pixel.png","./assets/sprites/truck_pixel.png","./assets/sprites/explosion_pixel_sheet.png","./assets/sprites/cloud_pixel.png","./assets/sprites/water_pixel_tile.png","./assets/sprites/bank_pixel_tile.png","./assets/sprites/bullet_1.png","./assets/sprites/bullet_2.png","./assets/sprites/bullet_3.png","./assets/sprites/item_fuel.png","./assets/sprites/item_shield.png","./assets/sprites/item_repair.png","./assets/sprites/item_bomb.png","./assets/sprites/item_coin.png","./assets/sprites/item_life.png"];
+self.addEventListener("install",e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)))});
+self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener("fetch",e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));

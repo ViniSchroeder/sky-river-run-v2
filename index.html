@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="theme-color" content="#061522">
-  <meta name="description" content="Sky River Run 2.2 — jogo arcade de avião.">
+  <meta name="description" content="Sky River Run 3.0 — jogo arcade de avião.">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./css/styles.css">
-  <title>Sky River Run 2.2</title>
+  <link rel="stylesheet" href="./css/styles.css?v=3001">
+  <title>Sky River Run 3.0</title>
 </head>
 <body>
   <canvas id="game" aria-label="Jogo Sky River Run"></canvas>
@@ -60,11 +60,14 @@
     <button id="sound" class="utility">🔊</button>
   </div>
 
+  <div id="joystick" class="joystick hidden" aria-label="Controle de movimento">
+    <div id="joystickKnob" class="joystick-knob"></div>
+  </div>
   <div class="mobile-actions">
     <button id="bombButton" class="action bomb hidden">💣</button>
     <button id="fireButton" class="action fire hidden">🔥</button>
   </div>
 
-  <script type="module" src="./js/game.js"></script>
+  <script type="module" src="./js/game.js?v=3001"></script>
 </body>
 </html>
