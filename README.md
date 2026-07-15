@@ -20,3 +20,9 @@ Reconstrução integral do jogo em WebGL/Three.js, sem reaproveitar os sprites a
 ## Publicação
 
 Substitua os arquivos do repositório, faça commit e push. A Vercel publicará o mesmo projeto automaticamente.
+
+
+## 4.1.1
+- Corrige o arquivo main.js truncado no repositório.
+- Inclui o módulo local completo three.core.js.
+- Atualiza o cache para 4110.
