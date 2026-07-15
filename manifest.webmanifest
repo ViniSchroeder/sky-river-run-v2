@@ -1,10 +1,9 @@
 {
-  "name": "Sky River Run 3.0 Pixel Arcade",
+  "name": "Sky River Run 4.0",
   "short_name": "SkyRiver",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#061522",
-  "theme_color": "#061522",
-  "description": "Arcade aéreo em pixel art inspirado nos clássicos de tiro vertical.",
+  "background_color": "#071522",
+  "theme_color": "#071522",
   "icons": []
 }

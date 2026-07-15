@@ -1,73 +1,10 @@
-<!doctype html>
-<html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta name="theme-color" content="#061522">
-  <meta name="description" content="Sky River Run 3.0 — jogo arcade de avião.">
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="stylesheet" href="./css/styles.css?v=3001">
-  <title>Sky River Run 3.0</title>
-</head>
-<body>
-  <canvas id="game" aria-label="Jogo Sky River Run"></canvas>
-
-  <header id="hud" class="hud hidden">
-    <div class="hud-panel status-panel">
-      <div class="hud-row"><span class="hud-label">COMBUSTÍVEL</span><strong id="fuelText">100%</strong></div>
-      <div class="life-bar"><i id="lifeBar"></i></div>
-    </div>
-    <div class="hud-panel">❤️ <span id="lives">3</span></div>
-    <div class="hud-panel">🛡️ <span id="shield">0</span></div>
-    <div class="hud-panel">🔫 <span id="weapon">1</span></div>
-    <div class="hud-panel">💣 <span id="bombs">0</span></div>
-    <div class="hud-panel">🪙 <span id="coins">0</span></div>
-    <div class="hud-panel score"><span id="score">0</span></div>
-  </header>
-
-  <main id="menu" class="overlay">
-    <section class="panel">
-      <h1>Sky <span>River</span> Run</h1>
-      <p>Versão 2.2 com novo avião, combustível visual, itens especiais e progressão.</p>
-      <p class="tips"><b>Desktop:</b> WASD/setas, segure Espaço para atirar, B para bomba, P para pausar.<br>
-      <b>Celular:</b> arraste e mantenha o botão de tiro pressionado.</p>
-      <button id="play" class="primary">JOGAR</button>
-      <p id="record" class="record"></p>
-    </section>
-  </main>
-
-  <section id="gameOver" class="overlay hidden">
-    <div class="panel">
-      <h2>GAME OVER</h2>
-      <p>Pontuação: <strong id="finalScore">0</strong></p>
-      <p id="finalRecord" class="record"></p>
-      <button id="restart" class="primary">JOGAR NOVAMENTE</button>
-    </div>
-  </section>
-
-  <section id="pauseOverlay" class="overlay hidden">
-    <div class="panel small-panel">
-      <h2>PAUSADO</h2>
-      <button id="resume" class="primary">CONTINUAR</button>
-    </div>
-  </section>
-
-  <div id="message" class="message"></div>
-
-  <div class="top-actions">
-    <button id="pause" class="utility hidden">⏸</button>
-    <button id="fullscreen" class="utility">⛶</button>
-    <button id="sound" class="utility">🔊</button>
-  </div>
-
-  <div id="joystick" class="joystick hidden" aria-label="Controle de movimento">
-    <div id="joystickKnob" class="joystick-knob"></div>
-  </div>
-  <div class="mobile-actions">
-    <button id="bombButton" class="action bomb hidden">💣</button>
-    <button id="fireButton" class="action fire hidden">🔥</button>
-  </div>
-
-  <script type="module" src="./js/game.js?v=3001"></script>
-</body>
-</html>
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><link rel="stylesheet" href="./css/styles.css?v=4001"><title>Sky River Run 4.0</title></head><body>
+<canvas id="game"></canvas>
+<header id="hud" class="hud hidden"><div class="meter panel"><b>COMBUSTÍVEL</b><div id="fuel" class="segments"></div></div><div class="panel">❤️ <span id="lives">3</span></div><div class="panel">🛡️ <span id="shield">0</span></div><div class="panel">🔫 <span id="weapon">1</span></div><div class="panel">💣 <span id="bombs">0</span></div><div class="panel score"><span id="score">0</span></div></header>
+<div class="top"><button id="pause">Ⅱ</button><button id="sound">🔊</button></div>
+<main id="menu" class="overlay"><section class="card"><small>PIXEL ARCADE EDITION</small><h1>SKY<br><span>RIVER</span><br>RUN</h1><p>Fases, pontes, upgrades e chefes.</p><button id="play">INICIAR MISSÃO</button></section></main>
+<section id="over" class="overlay hidden"><div class="card"><h2>GAME OVER</h2><p id="final"></p><button id="restart">REINICIAR</button></div></section>
+<section id="paused" class="overlay hidden"><div class="card"><h2>PAUSADO</h2><button id="resume">CONTINUAR</button></div></section>
+<div id="msg" class="msg"></div><div id="stage" class="stage"></div>
+<div id="joy" class="joy hidden"><div id="knob"></div></div><div class="actions"><button id="bomb">💣</button><button id="fire">🔥</button></div>
+<script type="module" src="./js/game.js?v=4001"></script></body></html>

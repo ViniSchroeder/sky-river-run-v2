@@ -1,117 +1,33 @@
-import {Player} from "./player.js";
-import {River} from "./river.js";
-import {EnemySystem} from "./enemies.js";
-import {Effects} from "./effects.js";
-import {UI} from "./ui.js";
-import {AudioSystem} from "./audio.js";
-
-const load=(src)=>{const i=new Image();i.src=src;return i};
-const sprites={
- player:load("./assets/sprites/player_pixel.png"),
- playerLeft:load("./assets/sprites/player_left.png"),
- playerRight:load("./assets/sprites/player_right.png"),
- airplane:load("./assets/sprites/player_pixel.png"),
- bird:load("./assets/sprites/player_pixel.png"),
- helicopter:load("./assets/sprites/helicopter_pixel.png"),
- ufo:load("./assets/sprites/ufo_pixel.png"),
- boat:load("./assets/sprites/boat_pixel.png"),
- submarine:load("./assets/sprites/submarine_pixel.png"),
- truck:load("./assets/sprites/truck_pixel.png"),
- explosion:load("./assets/sprites/explosion_pixel_sheet.png"),
- cloud:load("./assets/sprites/cloud_pixel.png"),
- water:load("./assets/sprites/water_pixel_tile.png"),
- bank:load("./assets/sprites/bank_pixel_tile.png"),
- bullet1:load("./assets/sprites/bullet_1.png"),
- bullet2:load("./assets/sprites/bullet_2.png"),
- bullet3:load("./assets/sprites/bullet_3.png"),
- fuel:load("./assets/sprites/item_fuel.png"),
- shield:load("./assets/sprites/item_shield.png"),
- repair:load("./assets/sprites/item_repair.png"),
- bombItem:load("./assets/sprites/item_bomb.png"),
- coin:load("./assets/sprites/item_coin.png"),
- life:load("./assets/sprites/item_life.png")
-};
-
-class Game {
- constructor(){
-  this.canvas=document.querySelector("#game");this.ctx=this.canvas.getContext("2d",{alpha:false});this.width=innerWidth;this.height=innerHeight;this.dpr=Math.min(devicePixelRatio||1,2);this.running=false;this.paused=false;this.time=0;this.score=0;this.speed=225;this.shake=0;this.record=Number(localStorage.getItem("sky-river-run-v2-record")||0);this.keys=new Set();this.joystick={x:0,y:0};this.firing=false;this.mobileFiring=false;this.fireTimer=0;this.bullets=[];this.pickups=[];this.pickupTimer=2;this.cloudTimer=7;this.level=1;
-  this.audio=new AudioSystem();this.river=new River(this,sprites.water,sprites.bank);this.effects=new Effects(this,sprites.explosion,sprites.cloud);this.player=new Player(this,{normal:sprites.player,left:sprites.playerLeft,right:sprites.playerRight});this.enemies=new EnemySystem(this,sprites);this.ui=new UI(this);this.bind();this.resize();document.querySelector("#record").textContent=this.record?`Recorde: ${this.record}`:"";requestAnimationFrame(t=>this.loop(t));
- }
- bind(){
-  addEventListener("resize",()=>this.resize());
-  addEventListener("keydown",e=>{if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown","Space"].includes(e.code))e.preventDefault();this.keys.add(e.code);if(e.code==="Space")this.firing=true;if(e.code==="KeyB"&&!e.repeat)this.useBomb();if(e.code==="KeyP"&&!e.repeat)this.togglePause()});
-  addEventListener("keyup",e=>{this.keys.delete(e.code);if(e.code==="Space")this.firing=false});
-  let active=false;const target=e=>{const r=this.canvas.getBoundingClientRect();this.player.targetX=e.clientX-r.left;this.player.targetY=e.clientY-r.top};
-  this.canvas.addEventListener("pointerdown",e=>{active=true;this.canvas.setPointerCapture?.(e.pointerId);if(this.running)target(e)});
-  this.canvas.addEventListener("pointermove",e=>{if(active&&this.running)target(e)});
-  this.canvas.addEventListener("pointerup",()=>active=false);this.canvas.addEventListener("pointercancel",()=>active=false);
-  document.querySelector("#play").onclick=()=>this.start();document.querySelector("#restart").onclick=()=>this.start();document.querySelector("#resume").onclick=()=>this.togglePause(false);document.querySelector("#pause").onclick=()=>this.togglePause();document.querySelector("#fullscreen").onclick=()=>document.fullscreenElement?document.exitFullscreen?.():document.documentElement.requestFullscreen?.();
-  document.querySelector("#sound").onclick=e=>{this.audio.muted=!this.audio.muted;e.currentTarget.textContent=this.audio.muted?"🔇":"🔊";if(this.audio.muted)this.audio.stop();else if(this.running&&!this.paused)this.audio.start()};
-  const fire=document.querySelector("#fireButton");fire.onpointerdown=e=>{e.preventDefault();this.mobileFiring=true};["pointerup","pointercancel","pointerleave"].forEach(n=>fire.addEventListener(n,()=>this.mobileFiring=false));
-  document.querySelector("#bombButton").onpointerdown=e=>{e.preventDefault();this.useBomb()};
-  
-  const joy=document.querySelector("#joystick"),knob=document.querySelector("#joystickKnob");
-  let joyActive=false;
-  const updateJoy=e=>{
-    const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
-    let dx=e.clientX-cx,dy=e.clientY-cy;
-    const max=r.width*.32,m=Math.hypot(dx,dy)||1;
-    if(m>max){dx=dx/m*max;dy=dy/m*max}
-    this.joystick.x=dx/max;this.joystick.y=dy/max;
-    knob.style.transform=`translate(${dx}px,${dy}px)`;
-  };
-  joy.addEventListener("pointerdown",e=>{joyActive=true;joy.setPointerCapture?.(e.pointerId);updateJoy(e)});
-  joy.addEventListener("pointermove",e=>{if(joyActive)updateJoy(e)});
-  const resetJoy=()=>{joyActive=false;this.joystick.x=0;this.joystick.y=0;knob.style.transform="translate(0,0)"};
-  joy.addEventListener("pointerup",resetJoy);joy.addEventListener("pointercancel",resetJoy);
-
-  document.addEventListener("visibilitychange",()=>{if(document.hidden){this.firing=false;this.mobileFiring=false;this.audio.stop()}else if(this.running&&!this.paused)this.audio.start()});
- }
- resize(){this.width=innerWidth;this.height=innerHeight;this.dpr=Math.min(devicePixelRatio||1,2);this.canvas.width=this.width*this.dpr;this.canvas.height=this.height*this.dpr;this.canvas.style.width=this.width+"px";this.canvas.style.height=this.height+"px"}
- start(){this.running=true;this.paused=false;this.time=0;this.score=0;this.speed=225;this.shake=0;this.fireTimer=0;this.bullets=[];this.pickups=[];this.pickupTimer=2;this.cloudTimer=7;this.level=1;this.player.reset();this.enemies.reset();this.effects.particles=[];this.effects.explosions=[];this.effects.clouds=[];this.ui.start();document.querySelector("#joystick").classList.remove("hidden");this.ui.update();this.audio.start()}
- togglePause(force){if(!this.running)return;this.paused=typeof force==="boolean"?!force:!this.paused;this.ui.paused(this.paused);if(this.paused)this.audio.stop();else this.audio.start()}
- fire(){const offsets=this.player.weapon===1?[0]:this.player.weapon===2?[-11,11]:[-17,0,17];for(const o of offsets)this.bullets.push({x:this.player.x+o,y:this.player.y-35,dead:false,power:this.player.weapon,thickness:2+this.player.weapon*2});this.audio.shot()}
- useBomb(){if(!this.running||this.paused||this.player.bombs<1)return;this.player.bombs--;this.shake=1.5;for(const e of this.enemies.items){if(!e.dead&&e.y>-80&&e.y<this.height*.82){e.dead=true;this.score+=Math.max(10,Math.floor(e.points*.35));this.effects.explode(e.x,e.y,18)}}for(const t of this.enemies.trucks){if(!t.dead){t.dead=true;this.score+=50;this.effects.explode(t.x,t.y,20)}}this.audio.explosion();this.ui.update()}
- loseLife(){this.player.lives--;this.effects.explode(this.player.x,this.player.y,34);this.audio.explosion();if(this.player.lives<=0){this.end();return}this.ui.message(`VIDAS: ${this.player.lives}`,1100);this.player.fuel=100;this.player.x=this.width/2;this.player.y=this.height*.76;this.player.targetX=this.player.x;this.player.targetY=this.player.y;this.player.invulnerable=2.2}
- end(){this.running=false;this.audio.stop();if(this.score>this.record){this.record=Math.floor(this.score);localStorage.setItem("sky-river-run-v2-record",String(this.record))}document.querySelector("#joystick").classList.add("hidden");this.ui.gameOver(this.score,this.record)}
- spawnPickup(){
-   const y=-70,b=this.river.bounds(y,95),r=Math.random();
-   const type=r<.34?"fuel":r<.48?"bomb":r<.64?"repair":r<.80?"shield":r<.93?"coin":"life";
-   const left=b.left+34,right=b.right-34;
-   this.pickups.push({type,x:left+Math.random()*Math.max(1,right-left),y,dead:false,phase:Math.random()*Math.PI*2});
- }
- update(dt){this.river.update(dt);if(!this.running||this.paused)return;this.time+=dt;this.speed+=dt*2.4;this.score+=dt*13;
-  const level=1+Math.floor(this.score/2500);
-  if(level!==this.level){this.level=level;this.ui.message(`NÍVEL ${level}`,1200);this.speed+=18;}this.shake=Math.max(0,this.shake-dt*3);this.player.fuel-=dt*(3.5+Math.min(2.2,this.time/120));if(this.player.fuel<=0)this.loseLife();this.player.update(dt,this.keys);this.enemies.update(dt);this.effects.update(dt);
-  this.fireTimer=Math.max(0,this.fireTimer-dt);if((this.firing||this.mobileFiring)&&this.fireTimer<=0){this.fire();this.fireTimer=Math.max(.08,.18-this.player.weapon*.025)}
-  for(const b of this.bullets){b.y-=680*dt;this.enemies.hitBullet(b)}
-  this.enemies.collidePlayer();this.bullets=this.bullets.filter(b=>!b.dead&&b.y>-40);
-  this.pickupTimer-=dt;if(this.pickupTimer<=0){this.spawnPickup();this.pickupTimer=1.5+Math.random()*1.8}
-  for(const p of this.pickups){
-   p.y+=this.speed*dt;p.phase+=dt*4;
-   const safe=this.river.bounds(p.y,85);
-   p.x=Math.max(safe.left+18,Math.min(safe.right-18,p.x));
-   if(!p.dead&&(p.x-this.player.x)**2+(p.y-this.player.y)**2<38**2){
-     p.dead=true;
-     if(p.type==="fuel"){this.player.fuel=Math.min(100,this.player.fuel+38);this.ui.message("+ COMBUSTÍVEL")}
-     else if(p.type==="bomb"){this.player.bombs=Math.min(5,this.player.bombs+1);this.ui.message("+ BOMBA")}
-     else if(p.type==="repair"){this.player.fuel=Math.min(100,this.player.fuel+20);this.ui.message("REPARO")}
-     else if(p.type==="shield"){this.player.shield=Math.min(3,this.player.shield+1);this.ui.message("+ ESCUDO")}
-     else if(p.type==="coin"){this.player.coins++;this.score+=75;this.ui.message("+ 75")} else if(p.type==="life"){this.player.lives=Math.min(5,this.player.lives+1);this.ui.message("+ 1 VIDA")}
-     this.audio.pickup();
-   }
+const c=document.querySelector("#game"),x=c.getContext("2d");const load=n=>{let i=new Image;i.src="./assets/sprites/"+n;return i};const I={player:load("player.png"),enemy:load("enemy.png"),heli:load("heli.png"),boat:load("boat.png"),sub:load("sub.png"),truck:load("truck.png"),bridge:load("bridge.png"),boss:load("boss.png"),expl:load("explosion.png"),bank:load("bank.png"),water:[0,1,2,3].map(n=>load("water"+n+".png")),fuel:load("fuel.png"),shield:load("shield.png"),repair:load("repair.png"),bomb:load("bomb.png"),coin:load("coin.png"),life:load("life.png"),weapon:load("weapon.png")};let W=innerWidth,H=innerHeight,D=Math.min(devicePixelRatio||1,2),run=false,pause=false,last=0,t=0,score=0,stage=1,speed=190,fire=false,mfire=false,fireT=0,spawnT=0,bridgeT=5,boss=null,frame=0,shake=0,record=+localStorage.srr4||0,keys=new Set,joy={x:0,y:0},enemies=[],bullets=[],items=[],bridges=[],trucks=[],explosions=[];const p={x:W/2,y:H*.78,tx:W/2,ty:H*.78,fuel:100,lives:3,shield:0,weapon:1,bombs:0,inv:0};function resize(){W=innerWidth;H=innerHeight;c.width=W*D;c.height=H*D}resize();addEventListener("resize",resize);
+function center(y){let n=y/H,w=n*2.6+t*.16;return W*.5+Math.sin(w)*W*.18+Math.sin(w*1.8)*W*.04}function half(y){let n=y/H,w=n*3.4+t*.11;return Math.max(W*.17,W*.31+Math.sin(w)*W*.035)}function bounds(y,m=0){let q=center(y),h=Math.max(42,half(y)-m);return{l:q-h,r:q+h}}
+const E={hud:document.querySelector("#hud"),fuel:document.querySelector("#fuel"),lives:document.querySelector("#lives"),shield:document.querySelector("#shield"),weapon:document.querySelector("#weapon"),bombs:document.querySelector("#bombs"),score:document.querySelector("#score"),menu:document.querySelector("#menu"),over:document.querySelector("#over"),paused:document.querySelector("#paused"),msg:document.querySelector("#msg"),stage:document.querySelector("#stage"),joy:document.querySelector("#joy")};for(let i=0;i<12;i++)E.fuel.appendChild(document.createElement("i"));function ui(){let on=Math.ceil(Math.max(0,p.fuel)/100*12);[...E.fuel.children].forEach((q,i)=>{q.className=i<on?"on "+(i<3?"r":i<7?"y":"g"):""});E.lives.textContent=p.lives;E.shield.textContent=p.shield;E.weapon.textContent=p.weapon;E.bombs.textContent=p.bombs;E.score.textContent=Math.floor(score)}function msg(s){E.msg.textContent=s;E.msg.style.opacity=1;setTimeout(()=>E.msg.style.opacity=0,800)}function stageMsg(s){E.stage.textContent=s;setTimeout(()=>E.stage.textContent="",1400)}
+function reset(){t=score=0;stage=1;speed=190;spawnT=0;bridgeT=5;boss=null;enemies=[];bullets=[];items=[];bridges=[];trucks=[];explosions=[];Object.assign(p,{x:W/2,y:H*.78,tx:W/2,ty:H*.78,fuel:100,lives:3,shield:0,weapon:1,bombs:0,inv:0});run=true;pause=false;E.menu.classList.add("hidden");E.over.classList.add("hidden");E.hud.classList.remove("hidden");E.joy.classList.remove("hidden");stageMsg("FASE 1");ui()}
+function spawnEnemy(){let b=bounds(-70,95),r=Math.random(),type=r>.75?"heli":r>.45?"enemy":r>.22?"boat":"sub";enemies.push({type,x:b.l+Math.random()*(b.r-b.l),y:-70,hp:type==="heli"?4:type==="sub"?5:type==="boat"?3:2,size:type==="heli"?60:56})}function spawnItem(xx=null,yy=-60){let b=bounds(yy,105),r=Math.random(),type=r<.25?"fuel":r<.4?"shield":r<.55?"repair":r<.68?"bomb":r<.82?"coin":r<.92?"weapon":"life";items.push({type,x:xx??b.l+30+Math.random()*Math.max(1,b.r-b.l-60),y:yy,ph:Math.random()*6.28})}function spawnBridge(){let br={y:-60};bridges.push(br);setTimeout(()=>trucks.push({b:br,x:center(br.y)-half(br.y)+30,dir:1,hp:3}),250)}
+function hitPlayer(n){if(p.inv>0)return;if(p.shield){p.shield--;p.inv=.6;msg("ESCUDO");return}p.fuel-=n;p.inv=.8;explosions.push({x:p.x,y:p.y,l:.7});if(p.fuel<=0){p.lives--;if(p.lives<=0){run=false;E.over.classList.remove("hidden");document.querySelector("#final").textContent="PONTOS "+Math.floor(score);if(score>record){record=Math.floor(score);localStorage.srr4=record}}else{p.fuel=100;p.x=p.tx=W/2;p.y=p.ty=H*.78;p.inv=2}}}
+function update(dt){if(!run||pause)return;t+=dt;score+=dt*10;speed=Math.min(300,190+stage*12+t*.7);p.fuel-=dt*(2.5+stage*.2);p.inv=Math.max(0,p.inv-dt);let dx=joy.x,dy=joy.y;if(keys.has("ArrowLeft")||keys.has("KeyA"))dx--;if(keys.has("ArrowRight")||keys.has("KeyD"))dx++;if(keys.has("ArrowUp")||keys.has("KeyW"))dy--;if(keys.has("ArrowDown")||keys.has("KeyS"))dy++;if(dx||dy){let m=Math.hypot(dx,dy)||1;p.tx+=dx/m*320*dt;p.ty+=dy/m*320*dt}p.ty=Math.max(90,Math.min(H-60,p.ty));let b=bounds(p.y,48);p.tx=Math.max(b.l,Math.min(b.r,p.tx));p.x+=(p.tx-p.x)*Math.min(1,dt*11);p.y+=(p.ty-p.y)*Math.min(1,dt*11);b=bounds(p.y,40);if(p.x<b.l){p.x=b.l;hitPlayer(10)}if(p.x>b.r){p.x=b.r;hitPlayer(10)}
+fireT-=dt;if((fire||mfire)&&fireT<=0){let os=p.weapon===1?[0]:p.weapon===2?[-10,10]:[-16,0,16];os.forEach(o=>bullets.push({x:p.x+o,y:p.y-35,pow:Math.min(3,1+Math.floor((p.weapon-1)/2))}));fireT=Math.max(.08,.18-p.weapon*.018)}spawnT-=dt;if(spawnT<=0&&!boss){spawnEnemy();spawnT=.65+Math.random()*.7}bridgeT-=dt;if(bridgeT<=0&&!boss){spawnBridge();bridgeT=9+Math.random()*6}if(t>38&&!boss){boss={x:W/2,y:-120,hp:110+stage*20,max:110+stage*20,ph:0};stageMsg("CHEFE")}
+bullets.forEach(q=>q.y-=680*dt);enemies.forEach(e=>e.y+=speed*dt);bridges.forEach(q=>q.y+=speed*dt);trucks.forEach(q=>{q.y=q.b.y;let cc=center(q.y),hh=half(q.y);q.x+=q.dir*75*dt;if(q.x>cc+hh+20||q.x<cc-hh-20)q.dir*=-1});items.forEach(q=>{q.y+=speed*dt;q.ph+=dt*4;let s=bounds(q.y,100);q.x=Math.max(s.l+25,Math.min(s.r-25,q.x))});explosions.forEach(q=>q.l-=dt);
+bullets.forEach(q=>{
+  enemies.forEach(e=>{
+    if(!q.d&&!e.d&&(q.x-e.x)**2+(q.y-e.y)**2<(e.size*.42)**2){
+      q.d=1;e.hp-=q.pow;
+      if(e.hp<=0){e.d=1;score+=100;explosions.push({x:e.x,y:e.y,l:.7});if(Math.random()<.25)spawnItem(e.x,e.y)}
+    }
+  });
+  trucks.forEach(e=>{
+    if(!q.d&&!e.d&&(q.x-e.x)**2+(q.y-e.y)**2<30**2){
+      q.d=1;e.hp-=q.pow;
+      if(e.hp<=0){e.d=1;p.weapon=Math.min(5,p.weapon+1);msg("ARMA "+p.weapon);explosions.push({x:e.x,y:e.y,l:.7})}
+    }
+  });
+  if(boss&&!q.d&&Math.abs(q.x-boss.x)<70&&Math.abs(q.y-boss.y)<65){
+    q.d=1;boss.hp-=q.pow;
+    if(boss.hp<=0){score+=5000;explosions.push({x:boss.x,y:boss.y,l:.7});boss=null;stage++;t=0;stageMsg("FASE "+stage)}
   }
-  this.pickups=this.pickups.filter(p=>!p.dead&&p.y<this.height+60);
-  if(this.score>=3000){this.cloudTimer-=dt;if(this.cloudTimer<=0){this.effects.cloudSpawn();this.cloudTimer=6+Math.random()*7}}
-  this.ui.update()
- }
- drawPickup(p){
-   const y=p.y+Math.sin(p.phase||0)*3;
-   const img={fuel:sprites.fuel,bomb:sprites.bombItem,repair:sprites.repair,shield:sprites.shield,coin:sprites.coin,life:sprites.life}[p.type];
-   if(!img?.complete)return;
-   this.ctx.save();this.ctx.imageSmoothingEnabled=false;this.ctx.drawImage(img,Math.round(p.x-24),Math.round(y-24),48,48);this.ctx.restore();
- }
- draw(){const c=this.ctx;c.setTransform(this.dpr,0,0,this.dpr,0,0);c.clearRect(0,0,this.width,this.height);if(this.shake)c.translate((Math.random()-.5)*8*this.shake,(Math.random()-.5)*8*this.shake);this.river.draw(c,this.time,this.speed);this.enemies.draw(c);for(const p of this.pickups)this.drawPickup(p);for(const b of this.bullets){const img=b.power>=3?sprites.bullet3:b.power===2?sprites.bullet2:sprites.bullet1;if(img.complete){c.imageSmoothingEnabled=false;const w=b.power>=3?24:b.power===2?20:16,h=b.power>=3?28:b.power===2?24:20;c.drawImage(img,Math.round(b.x-w/2),Math.round(b.y-h/2),w,h)}}this.effects.drawUnder(c);this.player.draw(c);this.effects.drawClouds(c)}
- loop(now){const dt=Math.min(.045,Math.max(0,(now-(this.last||now))/1000));this.last=now;this.update(dt);this.draw();requestAnimationFrame(t=>this.loop(t))}
-}
-new Game();
+});
+enemies.forEach(e=>{if(!e.d&&(p.x-e.x)**2+(p.y-e.y)**2<(24+e.size*.35)**2)hitPlayer(18)});
+if(boss){boss.ph+=dt;if(boss.y<140)boss.y+=80*dt;else boss.x=W/2+Math.sin(boss.ph)*W*.22}
+items.forEach(q=>{if(!q.d&&(p.x-q.x)**2+(p.y-q.y)**2<40**2){q.d=1;if(q.type==="fuel")p.fuel=Math.min(100,p.fuel+40);if(q.type==="shield")p.shield=Math.min(3,p.shield+1);if(q.type==="repair")p.fuel=Math.min(100,p.fuel+22);if(q.type==="bomb")p.bombs=Math.min(5,p.bombs+1);if(q.type==="coin")score+=100;if(q.type==="weapon")p.weapon=Math.min(5,p.weapon+1);if(q.type==="life")p.lives=Math.min(5,p.lives+1);msg(q.type.toUpperCase())}});bullets=bullets.filter(q=>!q.d&&q.y>-50);enemies=enemies.filter(e=>!e.d&&e.y<H+80);items=items.filter(q=>!q.d&&q.y<H+60);bridges=bridges.filter(q=>q.y<H+70);trucks=trucks.filter(q=>!q.d&&q.y<H+70);explosions=explosions.filter(q=>q.l>0);ui()}
+function draw(){x.setTransform(D,0,0,D,0,0);x.clearRect(0,0,W,H);x.fillStyle="#245f36";x.fillRect(0,0,W,H);x.beginPath();for(let y=-40;y<H+40;y+=14){let cc=center(y),hh=half(y);y===-40?x.moveTo(cc-hh,y):x.lineTo(cc-hh,y)}for(let y=H+40;y>=-40;y-=14){let cc=center(y),hh=half(y);x.lineTo(cc+hh,y)}x.closePath();x.fillStyle="#1a6da9";x.fill();x.save();x.clip();let wi=I.water[Math.floor(t*7)%4];if(wi.complete){let pat=x.createPattern(wi,"repeat");x.fillStyle=pat;x.fillRect(0,0,W,H)}x.restore();bridges.forEach(q=>{let cc=center(q.y),hh=half(q.y);x.drawImage(I.bridge,cc-hh-10,q.y-20,hh*2+20,40)});trucks.forEach(q=>x.drawImage(I.truck,q.x-36,q.y-24,72,48));enemies.forEach(e=>x.drawImage(I[e.type],e.x-e.size/2,e.y-e.size/2,e.size,e.size));items.forEach(q=>x.drawImage(I[q.type],q.x-25,q.y+Math.sin(q.ph)*3-25,50,50));bullets.forEach(q=>{x.fillStyle=q.pow>=3?"#5ce7ff":q.pow===2?"#ffb13c":"#ff5b4d";x.fillRect(q.x-(2+q.pow),q.y,4+q.pow*2,18+q.pow*3)});if(boss){x.drawImage(I.boss,boss.x-96,boss.y-96,192,192);x.fillStyle="#111";x.fillRect(W/2-90,70,180,12);x.fillStyle="#e5524b";x.fillRect(W/2-88,72,176*boss.hp/boss.max,8)}explosions.forEach(q=>{let f=Math.min(11,Math.floor((1-q.l/.7)*12));x.drawImage(I.expl,f*128,0,128,128,q.x-50,q.y-50,100,100)});x.fillStyle="#0006";x.beginPath();x.ellipse(p.x,p.y+32,40,10,0,0,6.28);x.fill();x.drawImage(I.player,p.x-48,p.y-48,96,96)}
+function loop(n){let dt=Math.min(.04,Math.max(0,(n-(last||n))/1000));last=n;update(dt);draw();requestAnimationFrame(loop)}requestAnimationFrame(loop);
+document.querySelector("#play").onclick=reset;document.querySelector("#restart").onclick=reset;document.querySelector("#pause").onclick=()=>{pause=!pause;E.paused.classList.toggle("hidden",!pause)};document.querySelector("#resume").onclick=()=>{pause=false;E.paused.classList.add("hidden")};addEventListener("keydown",e=>{keys.add(e.code);if(e.code==="Space")fire=true});addEventListener("keyup",e=>{keys.delete(e.code);if(e.code==="Space")fire=false});document.querySelector("#fire").onpointerdown=()=>mfire=true;document.querySelector("#fire").onpointerup=()=>mfire=false;let J=document.querySelector("#joy"),K=document.querySelector("#knob"),active=false;function jm(e){let r=J.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,max=r.width*.32,dx=e.clientX-cx,dy=e.clientY-cy,m=Math.hypot(dx,dy)||1;if(m>max){dx=dx/m*max;dy=dy/m*max}joy.x=dx/max;joy.y=dy/max;K.style.transform=`translate(${dx}px,${dy}px)`}J.onpointerdown=e=>{active=true;jm(e)};J.onpointermove=e=>{if(active)jm(e)};J.onpointerup=J.onpointercancel=()=>{active=false;joy.x=joy.y=0;K.style.transform="translate(0,0)"};
