@@ -2,7 +2,7 @@ async function loadSkyRiverRunSafe() {
   try {
     const baseUrl = new URL('./js/', window.location.href);
     const legacyLoaderUrl = new URL('bootstrap-loader.js?v=4600', baseUrl);
-    const bootstrapUrl = new URL('bootstrap.js?v=4601', baseUrl);
+    const bootstrapUrl = new URL('bootstrap.js?v=4602', baseUrl);
 
     const [legacyResponse, bootstrapResponse] = await Promise.all([
       fetch(legacyLoaderUrl.href, { cache: 'no-store' }),
@@ -47,14 +47,32 @@ async function loadSkyRiverRunSafe() {
     );
     source = source.replace('fogNear: 24, fogFar: 82', 'fogNear: 18, fogFar: 70');
 
+    const hotfixPatches = [
+      "    replaceEvery(",
+      "      '    boss.phase += dt;',",
+      "      '    boss.fuelSupplyTimer = (boss.fuelSupplyTimer ?? 30) - dt;\\n    boss.bombSupplyTimer = (boss.bombSupplyTimer ?? 20) - dt;\\n    if (boss.fuelSupplyTimer <= 0) {\\n      boss.fuelSupplyTimer += 30;\\n      this.spawnItem(null, -36, \\\'fuel\\\');\\n      this.ui.message(\\\'SUPRIMENTO DE COMBUSTÍVEL\\\', 850);\\n    }\\n    if (boss.bombSupplyTimer <= 0) {\\n      boss.bombSupplyTimer += 20;\\n      this.spawnItem(null, -34, \\\'bomb\\\');\\n      this.ui.message(\\\'BOMBA DE APOIO\\\', 850);\\n    }\\n    boss.phase += dt;',",
+      "      'suprimentos periódicos durante o chefe'",
+      "    );",
+      "    replaceEvery(",
+      "      '    if (this.boss) this.damageBoss(22);',",
+      "      '    if (this.boss) {\\n      const bombDamage = Math.min(260, 95 + this.stage * 22);\\n      this.damageBoss(bombDamage);\\n      this.spawnExplosion(this.boss.root.position.x, this.boss.root.position.z, 1.35);\\n      this.ui.message(\\\'BOMBA · DANO PESADO\\\', 700);\\n    }',",
+      "      'bombas mais fortes contra chefes'",
+      "    );",
+      "    replaceEvery(",
+      "      '    const podCount = 1 + tier;',",
+      "      '    const podCount = tier === 0 ? 0 : tier * 2;',",
+      "      'remove caixa assimétrica do primeiro chefe'",
+      "    );",
+    ].join('\n');
+
     const insertionMarker = 'const blobUrl = URL.createObjectURL';
     const insertionIndex = source.indexOf(insertionMarker);
     if (insertionIndex < 0) throw new Error('Ponto seguro de injeção não encontrado');
 
-    source = source.slice(0, insertionIndex) + extraPatches + '\n\n    ' + source.slice(insertionIndex);
-    source = source.replaceAll('v=4500', 'v=4601');
+    source = source.slice(0, insertionIndex) + extraPatches + '\n\n' + hotfixPatches + '\n\n    ' + source.slice(insertionIndex);
+    source = source.replaceAll('v=4500', 'v=4602');
     source = source.replaceAll('import.meta.url', JSON.stringify(bootstrapUrl.href));
-    source += '\n//# sourceURL=sky-river-run-bootstrap-safe-4601.js';
+    source += '\n//# sourceURL=sky-river-run-bootstrap-safe-4602.js';
 
     const blobUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
     try {
@@ -63,7 +81,7 @@ async function loadSkyRiverRunSafe() {
       URL.revokeObjectURL(blobUrl);
     }
   } catch (error) {
-    console.error('Falha ao carregar Sky River Run 4.6.1:', error);
+    console.error('Falha ao carregar Sky River Run 4.6.2:', error);
     const menu = document.querySelector('#menu .menu-card');
     if (menu) {
       const warning = document.createElement('p');
