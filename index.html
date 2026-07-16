@@ -4,16 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
   <meta name="theme-color" content="#0a1d2b" />
-  <meta name="description" content="Sky River Run 4.6 — chefes evolutivos, rajadas omnidirecionais, aves abatíveis e progressão de armamento corrigida." />
+  <meta name="description" content="Sky River Run 4.6.1 — hotfix de inicialização dos chefes evolutivos e progressão de armamento." />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./css/styles.css?v=4600" />
+  <link rel="stylesheet" href="./css/styles.css?v=4601" />
   <style>
     .weather-overlay.weather-fog{opacity:.54;background:rgba(205,218,216,.15)}
     .weather-overlay.weather-fog::before{inset:-18%;background:radial-gradient(circle at 16% 26%,rgba(255,255,255,.72) 0 6%,rgba(232,239,237,.38) 15%,transparent 32%),radial-gradient(circle at 79% 61%,rgba(255,255,255,.68) 0 7%,rgba(226,235,233,.34) 18%,transparent 35%),radial-gradient(circle at 48% 87%,rgba(255,255,255,.61) 0 5%,transparent 28%);animation:fogDrift 9s ease-in-out infinite alternate}
     .weather-overlay.weather-fog::after{inset:-24%;background:radial-gradient(ellipse at 56% 34%,transparent 0 11%,rgba(219,228,226,.43) 25%,rgba(235,241,239,.24) 46%,transparent 64%);animation:fogBlind 7.5s ease-in-out infinite alternate-reverse}
     @media(max-width:860px){.weather-overlay.weather-fog{opacity:.48}}
   </style>
-  <title>Sky River Run 4.6 — Combat Evolution</title>
+  <title>Sky River Run 4.6.1 — Combat Evolution Hotfix</title>
 </head>
 <body>
   <div id="game"></div>
@@ -87,6 +87,6 @@
     <button id="fireButton" class="action-button fire hidden" aria-label="Atirar">🔥</button>
   </div>
 
-  <script type="module" src="./js/bootstrap-loader.js?v=4600"></script>
+  <script type="module" src="./js/bootstrap-loader-safe.js?v=4601"></script>
 </body>
 </html>
