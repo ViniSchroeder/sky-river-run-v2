@@ -1,7 +1,7 @@
 async function loadPatchedBootstrap() {
   try {
-    const sourceUrl = new URL('./bootstrap.js?v=4500', import.meta.url);
-    const response = await fetch(sourceUrl, { cache: 'no-store' });
+    const sourceUrl = new URL('./js/bootstrap.js?v=4503', window.location.href);
+    const response = await fetch(sourceUrl.href, { cache: 'no-store' });
     if (!response.ok) throw new Error(`Falha ao carregar bootstrap.js: HTTP ${response.status}`);
 
     let source = await response.text();
@@ -64,15 +64,15 @@ async function loadPatchedBootstrap() {
       "      '    if (this.player.respawnTimer > 0) {\\n      this.player.respawnTimer = Math.max(0, this.player.respawnTimer - dt);\\n      const respawnProgress = 1 - this.player.respawnTimer / 2.6;\\n      const fullScale = this.starUpgradeActive ? 1.28 : 1;\\n      this.playerObject.scale.setScalar(fullScale * (0.72 + respawnProgress * 0.28));\\n      const blinkRate = 8 + respawnProgress * 13;\\n      this.playerObject.visible = this.player.respawnTimer < 0.32 || Math.floor((2.6 - this.player.respawnTimer) * blinkRate) % 2 === 0;\\n    } else {\\n      this.playerObject.scale.setScalar(this.starUpgradeActive ? 1.28 : 1);\\n      this.playerObject.visible = !(this.player.invulnerable > 0 && Math.floor(this.player.invulnerable * 16) % 2);\\n    }',",
       "      'animação de renascimento piscando'",
       "    );"
-    ].join('\\n');
+    ].join('\n');
 
     const injectionMarker = "    code += '\\n//# sourceURL=sky-river-run-main-fixed-4500.js';";
     if (!source.includes(injectionMarker)) throw new Error('Ponto de injeção do bootstrap não encontrado');
-    source = source.replace(injectionMarker, extraPatches + '\\n\\n' + injectionMarker);
+    source = source.replace(injectionMarker, extraPatches + '\n\n' + injectionMarker);
 
     // O bootstrap será executado por Blob; preserve a base original para resolver main.js e Three.js.
     source = source.replaceAll('import.meta.url', JSON.stringify(sourceUrl.href));
-    source += '\n//# sourceURL=sky-river-run-bootstrap-fixed-4502.js';
+    source += '\n//# sourceURL=sky-river-run-bootstrap-fixed-4503.js';
 
     const blobUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
     try {
@@ -81,7 +81,7 @@ async function loadPatchedBootstrap() {
       URL.revokeObjectURL(blobUrl);
     }
   } catch (error) {
-    console.error('Falha ao carregar Sky River Run 4.5.2:', error);
+    console.error('Falha ao carregar Sky River Run 4.5.3:', error);
     const menu = document.querySelector('#menu .menu-card');
     if (menu) {
       const warning = document.createElement('p');
