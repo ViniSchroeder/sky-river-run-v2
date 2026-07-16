@@ -1,28 +1,15 @@
-# Sky River Run 4.1 — 3D Rebuild
+# Sky River Run 4.2 — River Worlds
 
-Reconstrução integral do jogo em WebGL/Three.js, sem reaproveitar os sprites ampliados da versão anterior.
-
-## O que muda
-
-- Modelos 3D procedurais para avião, aeronaves inimigas, helicópteros, barcos, submarinos, discos voadores, caminhões e chefe.
-- Rio com largura variável e curvas reais; o centro da tela não é permanentemente seguro.
-- Colisão real com as margens.
-- Água animada com reflexos e textura em movimento.
-- Pontes tridimensionais com caminhões trafegando somente sobre a ponte.
-- Pontes funcionam como obstáculos e podem ser destruídas com bomba.
-- Itens claramente identificados por letras e cores: combustível, escudo, reparo, bomba, moeda, upgrade e vida.
-- Chefe com barra de energia, reação visual a impactos e dois padrões de ataque.
-- Nuvens 3D grandes e translúcidas passando sobre a câmera.
-- Explosões com partículas e iluminação.
-- Som de motor, efeitos e trilha retrô gerados pelo navegador.
-- Joystick translúcido para celular.
-
-## Publicação
-
-Substitua os arquivos do repositório, faça commit e push. A Vercel publicará o mesmo projeto automaticamente.
-
-
-## 4.1.1
-- Corrige o arquivo main.js truncado no repositório.
-- Inclui o módulo local completo three.core.js.
-- Atualiza o cache para 4110.
+## Novidades
+- Rio cerca de quatro vezes mais largo.
+- Barcos cruzam o rio de uma margem à outra.
+- Helicópteros e pássaros atravessam a tela.
+- Caminhões destruídos nas pontes melhoram o armamento e reduzem avarias.
+- Barra independente de avarias abaixo do combustível.
+- Combustível em galão com a palavra FUEL, reparo em chave inglesa e escudo próprio.
+- Fileiras eventuais de moedas.
+- Escudo dura 5 segundos e envolve visualmente o avião.
+- Chefes perdem partes e explodem em sequência antes da destruição final.
+- Fases alternam entre floresta, deserto, neve e tempestade.
+- Pontes só são destruídas por bombas; atravessar uma ponte ativa causa avaria grave.
+- Tiros inimigos e do chefe atingem o avião.

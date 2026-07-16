@@ -1,10 +1,10 @@
 {
-  "name": "Sky River Run 4.1 — 3D Rebuild",
-  "short_name": "SkyRiver",
+  "name": "Sky River Run 4.2 — River Worlds",
+  "short_name": "Sky River 4.2",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#06131d",
   "theme_color": "#0a1d2b",
-  "description": "Arcade aéreo 3D com fases, pontes, upgrades e chefes.",
+  "description": "Arcade aéreo 3D com rio ampliado, biomas, chefes e pontes explosivas.",
   "icons": []
 }
