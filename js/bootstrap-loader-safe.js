@@ -1,0 +1,78 @@
+async function loadSkyRiverRunSafe() {
+  try {
+    const baseUrl = new URL('./js/', window.location.href);
+    const legacyLoaderUrl = new URL('bootstrap-loader.js?v=4600', baseUrl);
+    const bootstrapUrl = new URL('bootstrap.js?v=4601', baseUrl);
+
+    const [legacyResponse, bootstrapResponse] = await Promise.all([
+      fetch(legacyLoaderUrl.href, { cache: 'no-store' }),
+      fetch(bootstrapUrl.href, { cache: 'no-store' }),
+    ]);
+
+    if (!legacyResponse.ok) throw new Error(`Falha ao carregar patches anteriores: HTTP ${legacyResponse.status}`);
+    if (!bootstrapResponse.ok) throw new Error(`Falha ao carregar bootstrap.js: HTTP ${bootstrapResponse.status}`);
+
+    const legacySource = await legacyResponse.text();
+    let source = await bootstrapResponse.text();
+
+    const assignmentMarker = 'const extraPatches = ';
+    const assignmentIndex = legacySource.indexOf(assignmentMarker);
+    if (assignmentIndex < 0) throw new Error('Pacote de patches da versão anterior não encontrado');
+
+    let cursor = assignmentIndex + assignmentMarker.length;
+    while (/\s/.test(legacySource[cursor] ?? '')) cursor += 1;
+    if (legacySource[cursor] !== '"') throw new Error('Formato dos patches anteriores não reconhecido');
+
+    const literalStart = cursor;
+    cursor += 1;
+    let escaped = false;
+    while (cursor < legacySource.length) {
+      const char = legacySource[cursor];
+      if (escaped) {
+        escaped = false;
+      } else if (char === '\\') {
+        escaped = true;
+      } else if (char === '"') {
+        break;
+      }
+      cursor += 1;
+    }
+    if (cursor >= legacySource.length) throw new Error('Pacote de patches incompleto');
+
+    const extraPatches = JSON.parse(legacySource.slice(literalStart, cursor + 1));
+
+    source = source.replace(
+      'this.ui.message(`RAJADA ${volley}`, 600);',
+      "this.ui.message('RAJADA ' + volley, 600);"
+    );
+    source = source.replace('fogNear: 24, fogFar: 82', 'fogNear: 18, fogFar: 70');
+
+    const insertionMarker = 'const blobUrl = URL.createObjectURL';
+    const insertionIndex = source.indexOf(insertionMarker);
+    if (insertionIndex < 0) throw new Error('Ponto seguro de injeção não encontrado');
+
+    source = source.slice(0, insertionIndex) + extraPatches + '\n\n    ' + source.slice(insertionIndex);
+    source = source.replaceAll('v=4500', 'v=4601');
+    source = source.replaceAll('import.meta.url', JSON.stringify(bootstrapUrl.href));
+    source += '\n//# sourceURL=sky-river-run-bootstrap-safe-4601.js';
+
+    const blobUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+    try {
+      await import(blobUrl);
+    } finally {
+      URL.revokeObjectURL(blobUrl);
+    }
+  } catch (error) {
+    console.error('Falha ao carregar Sky River Run 4.6.1:', error);
+    const menu = document.querySelector('#menu .menu-card');
+    if (menu) {
+      const warning = document.createElement('p');
+      warning.style.color = '#ff8d7f';
+      warning.style.fontWeight = '800';
+      warning.textContent = `Erro de inicialização: ${error.message}`;
+      menu.appendChild(warning);
+    }
+  }
+}
+
+loadSkyRiverRunSafe();
