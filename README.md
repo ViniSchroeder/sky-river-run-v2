@@ -1,11 +1,14 @@
-# Sky River Run 4.3 — Mouse & Arsenal
+# Sky River Run 4.4 — Weather & Stability
 
-## Alterações
-- Mouse controla o avião; clique esquerdo atira e clique direito usa bomba.
-- Movimento mais ágil e com maior alcance vertical.
-- Pássaros e helicópteros atravessam a área visível.
-- Barcos e submarinos remodelados em 3D.
-- Vida extra em formato de coração, uma vez por fase.
-- Tiro duplo após três UFOs; triplo após destruir caminhão; quádruplo após atingir uma ave.
-- Progressão respeita a ordem mesmo quando os desafios são cumpridos antecipadamente.
-- Chefe com muito mais energia e rajadas a cada cinco segundos, progressivamente mais letais.
+## Correções e melhorias
+- Otimização de renderização para evitar travamentos no início.
+- Limite de densidade de inimigos, itens, nuvens e partículas.
+- Pelo menos 3 bombas, 3 combustíveis e 3 reparos por fase.
+- Exatamente 1 coração de vida por fase.
+- Discos voadores garantidos várias vezes por fase.
+- Aves cruzam a tela mais rapidamente.
+- Neve intensa com visibilidade reduzida.
+- Deserto com rajadas laterais alternadas que desviam o avião.
+- Chuva lateral cobrindo toda a tela.
+- Nova fase de neblina com baixa visibilidade e pontos cegos móveis.
+- Cache atualizado para V4.4.

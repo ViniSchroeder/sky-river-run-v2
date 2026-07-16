@@ -3,7 +3,7 @@ import * as THREE from '../vendor/three.module.js';
 const WORLD_HALF = 38;
 const PLAYER_Z = 6.2;
 const TRACK_SPACING = 5.2;
-const TRACK_COUNT = 30;
+const TRACK_COUNT = 24;
 const clamp = THREE.MathUtils.clamp;
 const lerp = THREE.MathUtils.lerp;
 const rand = (min, max) => min + Math.random() * (max - min);
@@ -729,11 +729,12 @@ function setFlash(object, active) {
 class Game {
   constructor() {
     this.host = document.querySelector('#game');
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    this.isMobile = matchMedia('(pointer:coarse)').matches || innerWidth < 900;
+    this.renderer = new THREE.WebGLRenderer({ antialias: !this.isMobile, powerPreference: 'high-performance' });
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, this.isMobile ? 1.0 : 1.35));
     this.renderer.setSize(innerWidth, innerHeight);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.enabled = !this.isMobile;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
@@ -752,7 +753,7 @@ class Game {
     this.sun = new THREE.DirectionalLight(0xfff1cf, 3.4);
     this.sun.position.set(-10, 23, 12);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
+    this.sun.shadow.mapSize.set(1024, 1024);
     this.sun.shadow.camera.left = -22;
     this.sun.shadow.camera.right = 22;
     this.sun.shadow.camera.top = 28;
@@ -843,6 +844,10 @@ class Game {
 
     this.biome = 'forest';
     this.weatherMode = 'clear';
+    this.weatherOverlay = document.querySelector('#weatherOverlay');
+    this.desertWind = 0;
+    this.desertWindTarget = 0;
+    this.desertWindTimer = 0;
     this.createWeatherSystem();
 
     this.playerBullets = [];
@@ -861,9 +866,16 @@ class Game {
     this.birdUpgradeEarned = false;
     this.birdRewardStage = 0;
     this.lifeSpawnedStage = 0;
+    this.stageItemPlan = [];
+    this.stageItemCursor = 0;
+    this.stageUfoPlan = [];
+    this.stageUfoCursor = 0;
 
     this.bulletGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.75, 8);
     this.bulletGeometry.rotateX(Math.PI / 2);
+    this.enemyBulletGeometry = new THREE.SphereGeometry(0.13, 8, 6);
+    this.explosionParticleGeometry = new THREE.SphereGeometry(0.16, 6, 4);
+    this.cloudSphereGeometry = new THREE.SphereGeometry(1, 10, 7);
     this.playerBulletMaterials = [
       material(0xfff3a0, { emissive: 0xff4b32, emissiveIntensity: 1.5, roughness: 0.12 }),
       material(0xffffff, { emissive: 0xffb139, emissiveIntensity: 1.7, roughness: 0.08 }),
@@ -899,7 +911,7 @@ class Game {
     this.camera.right = viewHeight * aspect / 2;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(innerWidth, innerHeight);
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, this.isMobile ? 1.0 : 1.35));
   }
 
   bindControls() {
@@ -993,7 +1005,7 @@ class Game {
       if (event.pointerType && event.pointerType !== 'mouse') return;
       updateMouseTarget(event);
       if (event.button === 0) this.firing = true;
-      if (event.button === 2) this.useBomb();
+      if (event.button === 2) event.preventDefault();
     });
     canvas.addEventListener('pointerup', event => {
       if (event.button === 0) this.firing = false;
@@ -1010,27 +1022,28 @@ class Game {
   }
 
   createWeatherSystem() {
-    const count = 650;
+    const count = this.isMobile ? 240 : 380;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(count * 3);
     for (let i = 0; i < count; i += 1) {
-      positions[i * 3] = rand(-28, 28);
-      positions[i * 3 + 1] = rand(2, 18);
-      positions[i * 3 + 2] = rand(-80, 22);
+      positions[i * 3] = rand(-30, 30);
+      positions[i * 3 + 1] = rand(2, 20);
+      positions[i * 3 + 2] = rand(-80, 24);
     }
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const rainMaterial = new THREE.PointsMaterial({ color: 0xb9e5ff, size: 0.08, transparent: true, opacity: 0.68, depthWrite: false });
-    this.weatherPoints = new THREE.Points(geometry, rainMaterial);
+    const weatherMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.11, transparent: true, opacity: 0.76, depthWrite: false });
+    this.weatherPoints = new THREE.Points(geometry, weatherMaterial);
     this.weatherPoints.visible = false;
     this.scene.add(this.weatherPoints);
   }
 
   applyStageTheme() {
     const themes = [
-      { name: 'FLORESTA', biome: 'forest', ground: 0x35a449, side: 0x246c34, leaves: [0x227c39, 0x31944a, 0x186a31], sky: 0x9ed8ee, fog: 0x8fcbe1, water: 0x9fe5ff, sun: 3.4, weather: 'clear' },
-      { name: 'DESERTO', biome: 'desert', ground: 0xd3a657, side: 0x9c7035, leaves: [0x77913d, 0x8a7838, 0x627735], sky: 0xf1c68d, fog: 0xe7b477, water: 0x6fd0df, sun: 4.0, weather: 'clear' },
-      { name: 'NEVE', biome: 'snow', ground: 0xe9f4f7, side: 0xa9c4cd, leaves: [0xbfdce2, 0xd7eaee, 0x9ebdc7], sky: 0xc8e6f2, fog: 0xc5dfe9, water: 0x78c7e2, sun: 2.6, weather: 'snow' },
-      { name: 'TEMPESTADE', biome: 'rain', ground: 0x2f6945, side: 0x183f31, leaves: [0x1f5636, 0x2a6740, 0x183f2b], sky: 0x486676, fog: 0x506c79, water: 0x4f9db7, sun: 1.3, weather: 'rain' },
+      { name: 'FLORESTA', biome: 'forest', ground: 0x35a449, side: 0x246c34, leaves: [0x227c39, 0x31944a, 0x186a31], sky: 0x9ed8ee, fog: 0x8fcbe1, water: 0x9fe5ff, sun: 3.4, weather: 'clear', fogNear: 42, fogFar: 112 },
+      { name: 'DESERTO · VENTOS LATERAIS', biome: 'desert', ground: 0xd3a657, side: 0x9c7035, leaves: [0x77913d, 0x8a7838, 0x627735], sky: 0xf1c68d, fog: 0xe7b477, water: 0x6fd0df, sun: 4.0, weather: 'desert', fogNear: 38, fogFar: 105 },
+      { name: 'NEVE INTENSA', biome: 'snow', ground: 0xe9f4f7, side: 0xa9c4cd, leaves: [0xbfdce2, 0xd7eaee, 0x9ebdc7], sky: 0xc8e6f2, fog: 0xc5dfe9, water: 0x78c7e2, sun: 2.2, weather: 'snow', fogNear: 20, fogFar: 58 },
+      { name: 'TEMPESTADE', biome: 'rain', ground: 0x2f6945, side: 0x183f31, leaves: [0x1f5636, 0x2a6740, 0x183f2b], sky: 0x486676, fog: 0x506c79, water: 0x4f9db7, sun: 1.2, weather: 'rain', fogNear: 25, fogFar: 72 },
+      { name: 'NEBLINA · PONTOS CEGOS', biome: 'fog', ground: 0x607665, side: 0x35483d, leaves: [0x506b58, 0x637b68, 0x425a4a], sky: 0xb9c6c5, fog: 0xcbd3d1, water: 0x719ba4, sun: 1.5, weather: 'fog', fogNear: 8, fogFar: 38 },
     ];
     const theme = themes[(this.stage - 1) % themes.length];
     this.biome = theme.biome;
@@ -1040,41 +1053,98 @@ class Game {
     this.treeLeafMaterials.forEach((mat, index) => mat.color.setHex(theme.leaves[index % theme.leaves.length]));
     this.scene.background.setHex(theme.sky);
     this.scene.fog.color.setHex(theme.fog);
+    this.scene.fog.near = theme.fogNear;
+    this.scene.fog.far = theme.fogFar;
     this.waterMaterial.color.setHex(theme.water);
     this.sun.intensity = theme.sun;
-    this.weatherPoints.visible = theme.weather !== 'clear';
+    this.weatherPoints.visible = theme.weather === 'snow' || theme.weather === 'rain';
+    this.weatherPoints.material.color.setHex(theme.weather === 'snow' ? 0xffffff : 0xb9e5ff);
+    this.weatherPoints.material.size = theme.weather === 'snow' ? (this.isMobile ? 0.16 : 0.20) : 0.09;
+    this.weatherPoints.material.opacity = theme.weather === 'snow' ? 0.92 : 0.72;
+    this.weatherOverlay.className = `weather-overlay weather-${theme.weather}`;
+    this.desertWindTimer = 0;
+    this.desertWind = 0;
+    this.desertWindTarget = 0;
     this.ui.stage(`FASE ${this.stage} · ${theme.name}`);
     for (const segment of this.trackSegments) this.configureSegment(segment, segment.center, segment.width);
-    if (theme.weather === 'rain') this.cloudSpawnTimer = Math.min(this.cloudSpawnTimer, 2.5);
+    if (theme.weather === 'rain' || theme.weather === 'fog') this.cloudSpawnTimer = Math.min(this.cloudSpawnTimer, 2.2);
   }
 
   updateWeather(dt) {
+    if (this.weatherMode === 'desert') {
+      this.desertWindTimer -= dt;
+      if (this.desertWindTimer <= 0) {
+        this.desertWindTimer = rand(2.4, 4.8);
+        this.desertWindTarget = (Math.random() < 0.5 ? -1 : 1) * rand(2.2, 4.2);
+      }
+      this.desertWind = lerp(this.desertWind, this.desertWindTarget, Math.min(1, dt * 0.9));
+    } else {
+      this.desertWind = lerp(this.desertWind, 0, Math.min(1, dt * 2.2));
+    }
     if (!this.weatherPoints.visible) return;
     const positions = this.weatherPoints.geometry.attributes.position.array;
-    const fall = this.weatherMode === 'rain' ? 18 : 3.2;
-    const drift = this.weatherMode === 'rain' ? -5.5 : 0.7;
+    const snow = this.weatherMode === 'snow';
+    const fall = snow ? 5.8 : 20;
+    const drift = snow ? 1.7 : -8.5;
     for (let i = 0; i < positions.length; i += 3) {
       positions[i] += drift * dt;
       positions[i + 1] -= fall * dt;
-      positions[i + 2] += (this.weatherMode === 'rain' ? 6.0 : 2.0) * dt;
-      if (positions[i + 1] < 0 || positions[i + 2] > 24 || positions[i] < -32) {
-        positions[i] = rand(-26, 30);
-        positions[i + 1] = rand(12, 20);
-        positions[i + 2] = rand(-80, -10);
+      positions[i + 2] += (snow ? 2.8 : 7.0) * dt;
+      if (positions[i + 1] < 0 || positions[i + 2] > 26 || positions[i] < -34 || positions[i] > 34) {
+        positions[i] = rand(-30, 30);
+        positions[i + 1] = rand(14, 22);
+        positions[i + 2] = rand(-82, -8);
       }
     }
     this.weatherPoints.geometry.attributes.position.needsUpdate = true;
+  }
+
+  resetStageSpawnPlan() {
+    this.stageItemPlan = [
+      { time: 3.0, type: 'bomb' },
+      { time: 6.0, type: 'fuel' },
+      { time: 9.0, type: 'repair' },
+      { time: 12.0, type: 'life' },
+      { time: 15.0, type: 'bomb' },
+      { time: 18.0, type: 'fuel' },
+      { time: 21.0, type: 'repair' },
+      { time: 25.0, type: 'bomb' },
+      { time: 29.0, type: 'fuel' },
+      { time: 33.0, type: 'repair' },
+    ];
+    this.stageItemCursor = 0;
+    this.stageUfoPlan = [2.5, 8.5, 14.5, 21.5, 28.5, 35.0];
+    this.stageUfoCursor = 0;
+    this.lifeSpawnedStage = 0;
+  }
+
+  updateGuaranteedSpawns() {
+    while (!this.boss && this.stageItemCursor < this.stageItemPlan.length && this.stageTime >= this.stageItemPlan[this.stageItemCursor].time) {
+      const entry = this.stageItemPlan[this.stageItemCursor++];
+      if (entry.type === 'life') {
+        if (this.lifeSpawnedStage !== this.stage) {
+          this.spawnItem(null, -38, 'life');
+          this.lifeSpawnedStage = this.stage;
+        }
+      } else {
+        this.spawnItem(null, -38, entry.type);
+      }
+    }
+    while (!this.boss && this.stageUfoCursor < this.stageUfoPlan.length && this.stageTime >= this.stageUfoPlan[this.stageUfoCursor]) {
+      this.stageUfoCursor += 1;
+      if (this.enemies.filter(enemy => enemy.type === 'ufo' && !enemy.dead).length < 2) this.spawnEnemy('ufo');
+    }
   }
 
   makeTree() {
     const group = new THREE.Group();
     const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.16, 0.8, 7), this.treeTrunkMaterial);
     trunk.position.y = 0.9;
-    trunk.castShadow = true;
+    trunk.castShadow = !this.isMobile;
     group.add(trunk);
     const leaves = new THREE.Mesh(new THREE.ConeGeometry(rand(0.42, 0.62), rand(1.3, 1.85), 8), this.treeLeafMaterials[Math.floor(Math.random() * this.treeLeafMaterials.length)]);
     leaves.position.y = 1.85;
-    leaves.castShadow = true;
+    leaves.castShadow = !this.isMobile;
     group.add(leaves);
     return group;
   }
@@ -1086,10 +1156,10 @@ class Game {
     const left = new THREE.Mesh(new THREE.BoxGeometry(1, 0.78, TRACK_SPACING + 0.5), this.groundMaterial);
     const right = new THREE.Mesh(new THREE.BoxGeometry(1, 0.78, TRACK_SPACING + 0.5), this.groundMaterial);
     left.receiveShadow = right.receiveShadow = true;
-    left.castShadow = right.castShadow = true;
+    left.castShadow = right.castShadow = false;
     group.add(left, right);
     const trees = [];
-    for (let i = 0; i < 5; i += 1) {
+    for (let i = 0; i < 3; i += 1) {
       const tree = this.makeTree();
       group.add(tree);
       trees.push(tree);
@@ -1162,8 +1232,8 @@ class Game {
     const materials = [];
     clone.traverse(child => {
       if (!child.isMesh) return;
-      child.castShadow = true;
-      child.receiveShadow = true;
+      child.castShadow = false;
+      child.receiveShadow = false;
       if (Array.isArray(child.material)) child.material = child.material.map(mat => mat.clone());
       else child.material = child.material.clone();
       if (Array.isArray(child.material)) materials.push(...child.material);
@@ -1224,6 +1294,7 @@ class Game {
     this.birdUpgradeEarned = false;
     this.birdRewardStage = 0;
     this.lifeSpawnedStage = 0;
+    this.resetStageSpawnPlan();
     this.mouseControl.active = false;
     Object.assign(this.player, {
       x: 0,
@@ -1289,7 +1360,8 @@ class Game {
   }
 
   spawnEnemyBullet(x, z, velocityX, velocityZ, scale = 1, damageOverride = null) {
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.13 * scale, 8, 6), this.enemyBulletMaterial);
+    const mesh = new THREE.Mesh(this.enemyBulletGeometry, this.enemyBulletMaterial);
+    mesh.scale.setScalar(scale);
     mesh.position.set(x, 1.1, z);
     this.scene.add(mesh);
     this.enemyBullets.push({ mesh, vx: velocityX, vz: velocityZ, damage: damageOverride ?? (12 + scale * 3), dead: false });
@@ -1301,7 +1373,8 @@ class Game {
     const river = this.riverAt(z);
     const roll = Math.random();
     const chosen = type ?? (roll < 0.25 ? 'plane' : roll < 0.43 ? 'helicopter' : roll < 0.63 ? 'boat' : roll < 0.78 ? 'submarine' : roll < 0.88 ? 'bird' : 'ufo');
-    if (chosen === 'bird' || chosen === 'helicopter') z = rand(-11, 1.5);
+    if (chosen === 'bird' || chosen === 'helicopter') z = rand(-9, 2.5);
+    if (chosen === 'ufo') z = rand(-30, -18);
     let root;
     let hp;
     let radius;
@@ -1369,7 +1442,7 @@ class Game {
       lateral: rand(-0.7, 0.7),
       crossDirection,
       crossing,
-      crossSpeed: chosen === 'bird' ? rand(7.5, 10.0) : chosen === 'helicopter' ? rand(5.2, 7.2) : rand(2.3, 3.5),
+      crossSpeed: chosen === 'bird' ? rand(12.5, 16.0) : chosen === 'helicopter' ? rand(5.8, 8.0) : rand(2.6, 4.0),
       shootTimer: chosen === 'bird' ? 999 : rand(1.3, 3.1),
       emergeTimer: chosen === 'submarine' ? rand(1.4, 3.4) : 0,
       emerged: chosen !== 'submarine',
@@ -1456,8 +1529,9 @@ class Game {
     const group = new THREE.Group();
     const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: rand(0.58, 0.78), depthWrite: false });
     for (let i = 0; i < 12; i += 1) {
-      const sphere = new THREE.Mesh(new THREE.SphereGeometry(rand(1.2, 2.1), 12, 8), cloudMat);
-      sphere.scale.y = rand(0.55, 0.82);
+      const radius = rand(1.2, 2.1);
+      const sphere = new THREE.Mesh(this.cloudSphereGeometry, cloudMat);
+      sphere.scale.set(radius, radius * rand(0.55, 0.82), radius);
       sphere.position.set(rand(-2.8, 2.8), rand(-0.3, 0.5), rand(-1.2, 1.2));
       group.add(sphere);
     }
@@ -1497,9 +1571,11 @@ class Game {
     const group = new THREE.Group();
     const colors = [0xfff3a7, 0xffbd3c, 0xff6a38, 0x8b2e27];
     const particles = [];
-    for (let i = 0; i < 18; i += 1) {
+    for (let i = 0; i < 12; i += 1) {
       const mat = new THREE.MeshBasicMaterial({ color: colors[Math.floor(Math.random() * colors.length)], transparent: true, opacity: 1 });
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(rand(0.09, 0.22) * size, 7, 5), mat);
+      const particleScale = rand(0.55, 1.35) * size;
+      const mesh = new THREE.Mesh(this.explosionParticleGeometry, mat);
+      mesh.scale.setScalar(particleScale);
       mesh.position.set(0, 1.0, 0);
       const direction = new THREE.Vector3(rand(-1, 1), rand(0.2, 1.4), rand(-1, 1)).normalize().multiplyScalar(rand(1.8, 5.5) * size);
       group.add(mesh);
@@ -1595,6 +1671,7 @@ class Game {
     this.bossSpawned = false;
     this.birdRewardStage = 0;
     this.lifeSpawnedStage = 0;
+    this.resetStageSpawnPlan();
     this.player.fuel = Math.min(100, this.player.fuel + 35);
     this.player.damage = Math.max(0, this.player.damage - 28);
     this.applyStageTheme();
@@ -1737,20 +1814,24 @@ class Game {
     if (keyboardOrStick) {
       this.mouseControl.active = false;
       const len = Math.hypot(dx, dz) || 1;
-      this.player.targetX += dx / len * 20.5 * dt;
-      this.player.targetZ += dz / len * 10.8 * dt;
+      this.player.targetX += dx / len * 21.5 * dt;
+      this.player.targetZ += dz / len * 11.5 * dt;
     } else if (this.mouseControl.active) {
       this.player.targetX = this.mouseControl.x;
       this.player.targetZ = this.mouseControl.z;
       dx = clamp((this.player.targetX - this.player.x) * 0.18, -1, 1);
       dz = clamp((this.player.targetZ - this.player.z) * 0.18, -1, 1);
     }
+    if (this.weatherMode === 'desert') {
+      this.player.targetX += this.desertWind * dt;
+      dx += clamp(this.desertWind * 0.12, -0.45, 0.45);
+    }
     this.player.targetZ = clamp(this.player.targetZ, -5.5, 11.2);
     const targetRiver = this.riverAt(this.player.targetZ);
     const margin = 0.95;
     this.player.targetX = clamp(this.player.targetX, targetRiver.left + margin, targetRiver.right - margin);
-    this.player.x = lerp(this.player.x, this.player.targetX, Math.min(1, dt * 16));
-    this.player.z = lerp(this.player.z, this.player.targetZ, Math.min(1, dt * 16));
+    this.player.x = lerp(this.player.x, this.player.targetX, Math.min(1, dt * 17));
+    this.player.z = lerp(this.player.z, this.player.targetZ, Math.min(1, dt * 17));
     this.player.invulnerable = Math.max(0, this.player.invulnerable - dt);
     this.player.shield = Math.max(0, this.player.shield - dt);
     this.shieldBubble.visible = this.player.shield > 0;
@@ -1760,7 +1841,6 @@ class Game {
       this.shieldBubble.material.opacity = 0.16 + Math.sin(this.time * 9) * 0.04;
     }
     this.player.damageCooldown = Math.max(0, this.player.damageCooldown - dt);
-
     const currentRiver = this.riverAt(this.player.z);
     if (this.player.x < currentRiver.left + 0.72 || this.player.x > currentRiver.right - 0.72) {
       if (this.player.damageCooldown <= 0) {
@@ -1770,7 +1850,6 @@ class Game {
       this.player.x = clamp(this.player.x, currentRiver.left + 0.58, currentRiver.right - 0.58);
       this.player.targetX = this.player.x;
     }
-
     this.playerObject.position.x = this.player.x;
     this.playerObject.position.z = this.player.z;
     this.playerObject.rotation.z = lerp(this.playerObject.rotation.z, -dx * 0.22, Math.min(1, dt * 9));
@@ -2052,39 +2131,34 @@ class Game {
   }
 
   update(dt) {
-    this.waterTexture.offset.y -= dt * (0.38 + this.stage * 0.015);
     if (this.playerObject.userData.propeller) this.playerObject.userData.propeller.rotation.z += dt * 34;
     if (!this.running || this.paused) return;
-
+    this.waterTexture.offset.y -= dt * (0.38 + this.stage * 0.015);
     this.time += dt;
     this.stageTime += dt;
     this.score += dt * 14;
     const scrollSpeed = Math.min(12.8, 7.6 + this.stage * 0.55 + this.time * 0.012);
     this.player.fuel -= dt * (2.4 + this.stage * 0.18);
     if (this.player.fuel <= 0) this.loseLife();
-
+    this.updateWeather(dt);
     this.updateTrack(dt, scrollSpeed);
     this.updatePlayer(dt);
+    this.updateGuaranteedSpawns();
 
     this.fireTimer -= dt;
     if ((this.firing || this.mobileFiring) && this.fireTimer <= 0) {
       this.firePlayer();
-      this.fireTimer = Math.max(0.075, 0.18 - this.player.weapon * 0.018);
+      this.fireTimer = Math.max(0.085, 0.18 - this.player.weapon * 0.018);
     }
-
     this.enemySpawnTimer -= dt;
-    if (!this.boss && this.enemySpawnTimer <= 0) {
+    if (!this.boss && this.enemySpawnTimer <= 0 && this.enemies.length < 16) {
       this.spawnEnemy();
-      this.enemySpawnTimer = Math.max(0.48, 1.08 - this.stage * 0.06) + rand(0.12, 0.62);
+      this.enemySpawnTimer = Math.max(0.58, 1.12 - this.stage * 0.055) + rand(0.18, 0.66);
     }
     this.itemSpawnTimer -= dt;
-    if (!this.boss && this.itemSpawnTimer <= 0) {
+    if (!this.boss && this.itemSpawnTimer <= 0 && this.items.length < 24) {
       this.spawnItem();
-      this.itemSpawnTimer = rand(3.2, 5.4);
-    }
-    if (!this.boss && this.lifeSpawnedStage !== this.stage && this.stageTime >= 8) {
-      this.spawnItem(null, -46, 'life');
-      this.lifeSpawnedStage = this.stage;
+      this.itemSpawnTimer = rand(4.0, 6.2);
     }
     this.bridgeSpawnTimer -= dt;
     if (!this.boss && this.bridgeSpawnTimer <= 0) {
@@ -2092,26 +2166,26 @@ class Game {
       this.bridgeSpawnTimer = rand(13, 18);
     }
     this.cloudSpawnTimer -= dt;
-    if (this.cloudSpawnTimer <= 0) {
+    if (this.cloudSpawnTimer <= 0 && this.clouds.length < 4) {
       this.spawnCloud();
-      this.cloudSpawnTimer = this.biome === 'rain' ? rand(4, 7) : rand(8, 13);
+      this.cloudSpawnTimer = this.biome === 'rain' || this.biome === 'fog' ? rand(4, 7) : rand(9, 14);
     }
     this.coinRowTimer -= dt;
-    if (!this.boss && this.coinRowTimer <= 0) {
+    if (!this.boss && this.coinRowTimer <= 0 && this.items.length < 18) {
       this.spawnCoinRow();
-      this.coinRowTimer = rand(11, 17);
+      this.coinRowTimer = rand(12, 18);
     }
     this.birdSpawnTimer -= dt;
     if (!this.boss && this.birdSpawnTimer <= 0) {
       this.spawnEnemy('bird');
-      this.birdSpawnTimer = rand(5.0, 8.0);
+      this.birdSpawnTimer = rand(3.0, 5.0);
     }
     this.crossingSpawnTimer -= dt;
     if (!this.boss && this.crossingSpawnTimer <= 0) {
       this.spawnEnemy(Math.random() < 0.56 ? 'helicopter' : 'boat');
-      this.crossingSpawnTimer = rand(4.0, 6.5);
+      this.crossingSpawnTimer = rand(4.2, 6.8);
     }
-    if (this.stageTime > 38 && !this.boss && !this.bossSpawned) {
+    if (this.stageTime > 46 && !this.boss && !this.bossSpawned) {
       this.bossSpawned = true;
       this.spawnBoss();
     }
@@ -2123,7 +2197,6 @@ class Game {
     this.updateClouds(dt, scrollSpeed);
     this.updateExplosions(dt);
     this.updateBoss(dt);
-    this.updateWeather(dt);
     this.shake = Math.max(0, this.shake - dt * 2.8);
     this.ui.update();
   }
@@ -2138,8 +2211,14 @@ class Game {
 
   loop() {
     const dt = Math.min(0.04, this.clock.getDelta());
-    this.update(dt);
-    this.render();
+    try {
+      this.update(dt);
+      this.render();
+    } catch (error) {
+      console.error('Sky River Run loop error:', error);
+      this.paused = true;
+      this.ui.message('ERRO DE EXECUÇÃO · RECARREGUE A PÁGINA', 5000);
+    }
   }
 }
 
