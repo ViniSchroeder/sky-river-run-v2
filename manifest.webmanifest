@@ -1,10 +1,10 @@
 {
-  "name": "Sky River Run 4.2 — River Worlds",
-  "short_name": "Sky River 4.2",
+  "name": "Sky River Run 4.3 — Mouse & Arsenal",
+  "short_name": "Sky River 4.3",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#06131d",
   "theme_color": "#0a1d2b",
-  "description": "Arcade aéreo 3D com rio ampliado, biomas, chefes e pontes explosivas.",
+  "description": "Arcade aéreo 3D com mouse, tiros progressivos, aves, barcos e chefe reforçado.",
   "icons": []
 }

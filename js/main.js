@@ -333,6 +333,27 @@ function createBombPickup() {
   return group;
 }
 
+function createHeartPickup() {
+  const group = new THREE.Group();
+  const shape = new THREE.Shape();
+  shape.moveTo(0, -0.58);
+  shape.bezierCurveTo(-0.82, -0.08, -0.76, 0.72, -0.24, 0.78);
+  shape.bezierCurveTo(0, 0.80, 0, 0.52, 0, 0.42);
+  shape.bezierCurveTo(0, 0.52, 0, 0.80, 0.24, 0.78);
+  shape.bezierCurveTo(0.76, 0.72, 0.82, -0.08, 0, -0.58);
+  const red = material(0xe72f43, { roughness: 0.24, metalness: 0.18, emissive: 0x7b0715, emissiveIntensity: 0.75 });
+  const heart = new THREE.Mesh(new THREE.ExtrudeGeometry(shape, { depth: 0.20, bevelEnabled: true, bevelSize: 0.08, bevelThickness: 0.08, bevelSegments: 3 }), red);
+  heart.rotation.x = -Math.PI / 2;
+  heart.position.y = 1.0;
+  heart.scale.setScalar(0.82);
+  group.add(heart);
+  const shine = new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), material(0xffffff, { emissive: 0xffdce2, emissiveIntensity: 1.3 }));
+  shine.position.set(-0.24, 1.26, 0.14);
+  group.add(shine);
+  group.userData.spinParts = [heart];
+  return group;
+}
+
 function createGenericPickup(type, texture) {
   const group = new THREE.Group();
   const colors = { weapon: 0xbf68e6, life: 0xe4587a };
@@ -506,39 +527,107 @@ function createHelicopter() {
 
 function createBoat() {
   const group = new THREE.Group();
-  const hullMat = material(0xe4e7e8, { roughness: 0.45 });
-  const redMat = material(0xc63d3d, { roughness: 0.5 });
-  const darkMat = material(0x1b2935, { roughness: 0.8 });
-  const hull = new THREE.Mesh(new THREE.ConeGeometry(0.86, 2.9, 4), hullMat);
-  hull.rotation.x = Math.PI / 2;
-  hull.rotation.z = Math.PI / 4;
-  hull.position.y = 0.35;
+  const hullMat = material(0xf0f3f4, { roughness: 0.36, metalness: 0.08 });
+  const lowerMat = material(0x1f4f72, { roughness: 0.45, metalness: 0.12 });
+  const redMat = material(0xd5443f, { roughness: 0.42 });
+  const darkMat = material(0x142531, { roughness: 0.72 });
+  const chromeMat = material(0xbccbd4, { roughness: 0.22, metalness: 0.7 });
+
+  const outline = new THREE.Shape();
+  outline.moveTo(0, -1.85);
+  outline.lineTo(0.88, -0.82);
+  outline.lineTo(0.72, 1.28);
+  outline.quadraticCurveTo(0, 1.72, -0.72, 1.28);
+  outline.lineTo(-0.88, -0.82);
+  outline.closePath();
+  const hull = new THREE.Mesh(new THREE.ExtrudeGeometry(outline, { depth: 0.34, bevelEnabled: true, bevelSize: 0.08, bevelThickness: 0.08, bevelSegments: 2 }), hullMat);
+  hull.rotation.x = -Math.PI / 2;
+  hull.position.set(0, 0.18, 0.18);
   group.add(hull);
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.48, 0.95), redMat);
-  cabin.position.set(0, 0.74, 0.15);
+
+  const lowerHull = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.32, 2.45), lowerMat);
+  lowerHull.position.set(0, 0.22, 0.20);
+  lowerHull.scale.x = 0.82;
+  group.add(lowerHull);
+
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.58, 0.92), redMat);
+  cabin.position.set(0, 0.78, 0.22);
   group.add(cabin);
-  const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.26, 0.08), darkMat);
-  windshield.position.set(0, 0.8, -0.36);
+  const windshield = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.28, 0.08), darkMat);
+  windshield.position.set(0, 0.85, -0.27);
   group.add(windshield);
-  group.userData.materials = [hullMat, redMat];
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.10, 1.02), chromeMat);
+  roof.position.set(0, 1.10, 0.22);
+  group.add(roof);
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.72, 8), chromeMat);
+  mast.position.set(0, 1.50, 0.25);
+  group.add(mast);
+  const bowRail = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.035, 6, 14, Math.PI), chromeMat);
+  bowRail.rotation.x = Math.PI / 2;
+  bowRail.position.set(0, 0.66, -1.03);
+  group.add(bowRail);
+
+  const wakeMat = new THREE.MeshBasicMaterial({ color: 0xdaf7ff, transparent: true, opacity: 0.48, depthWrite: false });
+  const wakeL = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.025, 1.55), wakeMat);
+  wakeL.position.set(-0.68, 0.05, 1.28);
+  wakeL.rotation.y = -0.18;
+  group.add(wakeL);
+  const wakeR = wakeL.clone();
+  wakeR.position.x = 0.68;
+  wakeR.rotation.y = 0.18;
+  group.add(wakeR);
+
+  group.userData.materials = [hullMat, lowerMat, redMat];
   return group;
 }
 
 function createSubmarine() {
   const group = new THREE.Group();
-  const hullMat = material(0x394c59, { roughness: 0.48, metalness: 0.18 });
-  const hull = new THREE.Mesh(new THREE.CapsuleGeometry(0.48, 2.1, 6, 10), hullMat);
+  const hullMat = material(0x344957, { roughness: 0.38, metalness: 0.38 });
+  const darkMat = material(0x172630, { roughness: 0.58, metalness: 0.28 });
+  const accentMat = material(0x667b87, { roughness: 0.34, metalness: 0.48 });
+
+  const hull = new THREE.Mesh(new THREE.CapsuleGeometry(0.54, 2.45, 8, 14), hullMat);
   hull.rotation.x = Math.PI / 2;
-  hull.position.y = 0.35;
+  hull.position.y = 0.28;
   group.add(hull);
-  const tower = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.48, 0.62), hullMat);
-  tower.position.set(0, 0.78, 0.08);
+  const bow = new THREE.Mesh(new THREE.ConeGeometry(0.53, 0.72, 14), hullMat);
+  bow.rotation.x = -Math.PI / 2;
+  bow.position.set(0, 0.28, -1.92);
+  group.add(bow);
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.70, 12), darkMat);
+  tail.rotation.x = Math.PI / 2;
+  tail.position.set(0, 0.28, 1.86);
+  group.add(tail);
+
+  const tower = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.58, 0.72), accentMat);
+  tower.position.set(0, 0.78, -0.05);
   group.add(tower);
-  const scope = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.05, 6, 10, Math.PI), hullMat);
-  scope.rotation.z = Math.PI / 2;
-  scope.position.set(0, 1.12, 0.05);
-  group.add(scope);
-  group.userData.materials = [hullMat];
+  const scopeStem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.62, 8), darkMat);
+  scopeStem.position.set(0, 1.27, -0.02);
+  group.add(scopeStem);
+  const scopeTop = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.10, 0.10), darkMat);
+  scopeTop.position.set(0.15, 1.56, -0.02);
+  group.add(scopeTop);
+
+  const fin = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.08, 0.52), accentMat);
+  fin.position.set(0, 0.28, 1.45);
+  group.add(fin);
+  const rudder = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.74, 0.50), accentMat);
+  rudder.position.set(0, 0.55, 1.52);
+  group.add(rudder);
+  const propeller = new THREE.Group();
+  const hub = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), darkMat);
+  propeller.add(hub);
+  const bladeA = new THREE.Mesh(new THREE.BoxGeometry(0.90, 0.07, 0.12), darkMat);
+  propeller.add(bladeA);
+  const bladeB = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.90, 0.12), darkMat);
+  propeller.add(bladeB);
+  propeller.position.set(0, 0.28, 2.28);
+  group.add(propeller);
+
+  group.userData.propeller = propeller;
+  group.userData.materials = [hullMat, darkMat, accentMat];
   return group;
 }
 
@@ -675,6 +764,10 @@ class Game {
     this.clock = new THREE.Clock();
     this.keys = new Set();
     this.joystick = { x: 0, y: 0 };
+    this.mouseControl = { active: false, x: 0, z: PLAYER_Z };
+    this.mouseRaycaster = new THREE.Raycaster();
+    this.mousePlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    this.mousePoint = new THREE.Vector3();
     this.mobileFiring = false;
     this.firing = false;
     this.running = false;
@@ -763,6 +856,11 @@ class Game {
     this.crossingSpawnTimer = 3.2;
     this.explosions = [];
     this.boss = null;
+    this.ufoKills = 0;
+    this.truckUpgradeEarned = false;
+    this.birdUpgradeEarned = false;
+    this.birdRewardStage = 0;
+    this.lifeSpawnedStage = 0;
 
     this.bulletGeometry = new THREE.CylinderGeometry(0.08, 0.08, 0.75, 8);
     this.bulletGeometry.rotateX(Math.PI / 2);
@@ -780,7 +878,7 @@ class Game {
       bomb: { label: 'B', color: '#6b70df', message: 'BOMBA' },
       coin: { label: '$', color: '#e3b832', message: '+100' },
       weapon: { label: 'W', color: '#bf68e6', message: 'UPGRADE' },
-      life: { label: '1', color: '#e4587a', message: 'VIDA EXTRA' },
+      life: { label: '♥', color: '#e72f43', message: 'VIDA EXTRA' },
     };
     this.itemTextures = {};
     for (const [type, def] of Object.entries(this.itemTypes)) this.itemTextures[type] = makeLabelTexture(def.label, def.color);
@@ -872,6 +970,39 @@ class Game {
     };
     joystick.addEventListener('pointerup', resetJoystick);
     joystick.addEventListener('pointercancel', resetJoystick);
+
+
+    const canvas = this.renderer.domElement;
+    canvas.style.cursor = 'crosshair';
+    const updateMouseTarget = event => {
+      if (event.pointerType && event.pointerType !== 'mouse') return;
+      const rect = canvas.getBoundingClientRect();
+      const ndc = new THREE.Vector2(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -((event.clientY - rect.top) / rect.height) * 2 + 1
+      );
+      this.mouseRaycaster.setFromCamera(ndc, this.camera);
+      if (this.mouseRaycaster.ray.intersectPlane(this.mousePlane, this.mousePoint)) {
+        this.mouseControl.active = true;
+        this.mouseControl.x = this.mousePoint.x;
+        this.mouseControl.z = clamp(this.mousePoint.z, -5.5, 11.2);
+      }
+    };
+    canvas.addEventListener('pointermove', updateMouseTarget);
+    canvas.addEventListener('pointerdown', event => {
+      if (event.pointerType && event.pointerType !== 'mouse') return;
+      updateMouseTarget(event);
+      if (event.button === 0) this.firing = true;
+      if (event.button === 2) this.useBomb();
+    });
+    canvas.addEventListener('pointerup', event => {
+      if (event.button === 0) this.firing = false;
+    });
+    canvas.addEventListener('pointerleave', () => { this.firing = false; });
+    canvas.addEventListener('contextmenu', event => {
+      event.preventDefault();
+      this.useBomb();
+    });
 
     document.addEventListener('visibilitychange', () => {
       if (document.hidden && this.running && !this.paused) this.togglePause(true);
@@ -1088,6 +1219,12 @@ class Game {
     this.crossingSpawnTimer = 3.4;
     this.bossSpawned = false;
     this.shake = 0;
+    this.ufoKills = 0;
+    this.truckUpgradeEarned = false;
+    this.birdUpgradeEarned = false;
+    this.birdRewardStage = 0;
+    this.lifeSpawnedStage = 0;
+    this.mouseControl.active = false;
     Object.assign(this.player, {
       x: 0,
       targetX: 0,
@@ -1151,19 +1288,20 @@ class Game {
     this.audio.shot(level);
   }
 
-  spawnEnemyBullet(x, z, velocityX, velocityZ, scale = 1) {
+  spawnEnemyBullet(x, z, velocityX, velocityZ, scale = 1, damageOverride = null) {
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.13 * scale, 8, 6), this.enemyBulletMaterial);
     mesh.position.set(x, 1.1, z);
     this.scene.add(mesh);
-    this.enemyBullets.push({ mesh, vx: velocityX, vz: velocityZ, damage: 12 + scale * 3, dead: false });
+    this.enemyBullets.push({ mesh, vx: velocityX, vz: velocityZ, damage: damageOverride ?? (12 + scale * 3), dead: false });
   }
 
   spawnEnemy(type = null) {
     if (this.boss) return;
-    const z = rand(-70, -48);
+    let z = rand(-70, -48);
     const river = this.riverAt(z);
     const roll = Math.random();
-    const chosen = type ?? (roll < 0.30 ? 'plane' : roll < 0.49 ? 'helicopter' : roll < 0.70 ? 'boat' : roll < 0.84 ? 'submarine' : roll < 0.94 ? 'bird' : 'ufo');
+    const chosen = type ?? (roll < 0.25 ? 'plane' : roll < 0.43 ? 'helicopter' : roll < 0.63 ? 'boat' : roll < 0.78 ? 'submarine' : roll < 0.88 ? 'bird' : 'ufo');
+    if (chosen === 'bird' || chosen === 'helicopter') z = rand(-11, 1.5);
     let root;
     let hp;
     let radius;
@@ -1184,6 +1322,7 @@ class Game {
       crossing = true;
       root.position.x = crossDirection > 0 ? -WORLD_HALF - 5 : WORLD_HALF + 5;
       root.rotation.y = crossDirection > 0 ? -Math.PI / 2 : Math.PI / 2;
+      root.scale.setScalar(1.18);
     } else if (chosen === 'boat') {
       root = this.cloneRenderable(this.boatPrototype);
       hp = 3 + Math.floor(this.stage * 0.35);
@@ -1191,13 +1330,14 @@ class Game {
       points = 120;
       root.position.x = crossDirection > 0 ? river.left + 1.4 : river.right - 1.4;
       root.rotation.y = crossDirection > 0 ? -Math.PI / 2 : Math.PI / 2;
+      root.scale.setScalar(1.22);
     } else if (chosen === 'submarine') {
       root = this.cloneRenderable(this.submarinePrototype);
       hp = 5 + Math.floor(this.stage * 0.5);
       radius = 0.88;
       points = 230;
       root.position.y = -0.22;
-      root.scale.y = 0.35;
+      root.scale.set(1.20, 0.35, 1.20);
     } else if (chosen === 'bird') {
       root = this.cloneRenderable(this.birdPrototype);
       hp = 1;
@@ -1207,6 +1347,7 @@ class Game {
       root.position.x = crossDirection > 0 ? -WORLD_HALF - 3 : WORLD_HALF + 3;
       root.rotation.y = crossDirection > 0 ? -Math.PI / 2 : Math.PI / 2;
       altitude = 1;
+      root.scale.setScalar(1.55);
     } else {
       root = this.cloneRenderable(this.ufoPrototype);
       hp = 7 + this.stage;
@@ -1245,6 +1386,7 @@ class Game {
     else if (type === 'shield') group = createShieldPickup();
     else if (type === 'coin') group = createCoin();
     else if (type === 'bomb') group = createBombPickup();
+    else if (type === 'life') group = createHeartPickup();
     else group = createGenericPickup(type, this.itemTextures[type]);
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(type === 'coin' ? 0.57 : 0.70, 0.045, 8, 24),
@@ -1261,7 +1403,7 @@ class Game {
   spawnItem(x = null, z = -58, forcedType = null) {
     const river = this.riverAt(z);
     const roll = Math.random();
-    const type = forcedType ?? (roll < 0.27 ? 'fuel' : roll < 0.42 ? 'shield' : roll < 0.56 ? 'repair' : roll < 0.68 ? 'bomb' : roll < 0.82 ? 'coin' : roll < 0.93 ? 'weapon' : 'life');
+    const type = forcedType ?? (roll < 0.31 ? 'fuel' : roll < 0.49 ? 'shield' : roll < 0.66 ? 'repair' : roll < 0.80 ? 'bomb' : 'coin');
     const root = this.makeItemRoot(type);
     root.position.set(x ?? rand(river.left + 1.15, river.right - 1.15), 0, z);
     this.scene.add(root);
@@ -1331,14 +1473,15 @@ class Game {
     root.position.set(0, 0.25, -32);
     root.rotation.y = Math.PI;
     this.scene.add(root);
-    const maxHp = 120 + this.stage * 35;
+    const maxHp = 280 + this.stage * 95;
     this.boss = {
       root,
       hp: maxHp,
       maxHp,
       phase: 0,
-      attackTimer: 1.15,
-      aimedTimer: 2.2,
+      attackTimer: 5.0,
+      aimedTimer: 999,
+      volley: 0,
       flash: 0,
       radius: 2.2,
       dead: false,
@@ -1375,6 +1518,18 @@ class Game {
     if (entity.root?.parent) entity.root.parent.remove(entity.root);
   }
 
+  refreshWeaponProgression() {
+    let next = 1;
+    if (this.ufoKills >= 3) next = 2;
+    if (next >= 2 && this.truckUpgradeEarned) next = 3;
+    if (next >= 3 && this.birdUpgradeEarned) next = 4;
+    if (next > this.player.weapon) {
+      this.player.weapon = next;
+      const names = { 2: 'DISPARO DUPLO', 3: 'DISPARO TRIPLO', 4: 'DISPARO QUÁDRUPLO' };
+      this.ui.message(names[next] ?? `ARMAMENTO ${next}`, 1400);
+    }
+  }
+
   damageEnemy(enemy, damage) {
     enemy.hp -= damage;
     enemy.flash = 0.10;
@@ -1385,13 +1540,16 @@ class Game {
     this.spawnExplosion(enemy.root.position.x, enemy.root.position.z, enemy.type === 'ufo' ? 1.2 : 0.9);
     this.audio.explode();
     if (Math.random() < 0.28) this.spawnItem(enemy.root.position.x, enemy.root.position.z);
-    if (enemy.type === 'helicopter' && this.player.weapon < 2) {
-      this.player.weapon = 2;
-      this.ui.message('DISPARO DUPLO');
+    if (enemy.type === 'ufo') {
+      this.ufoKills += 1;
+      this.ui.message(`DISCOS VOADORES ${Math.min(this.ufoKills, 3)}/3`, 900);
+      this.refreshWeaponProgression();
     }
-    if (enemy.type === 'ufo' && this.player.weapon < 3) {
-      this.player.weapon = 3;
-      this.ui.message('DISPARO TRIPLO');
+    if (enemy.type === 'bird' && this.birdRewardStage !== this.stage) {
+      this.birdRewardStage = this.stage;
+      this.birdUpgradeEarned = true;
+      this.ui.message('MÓDULO QUÁDRUPLO CAPTURADO', 1200);
+      this.refreshWeaponProgression();
     }
     enemy.root.parent?.remove(enemy.root);
   }
@@ -1435,6 +1593,8 @@ class Game {
     this.stage += 1;
     this.stageTime = 0;
     this.bossSpawned = false;
+    this.birdRewardStage = 0;
+    this.lifeSpawnedStage = 0;
     this.player.fuel = Math.min(100, this.player.fuel + 35);
     this.player.damage = Math.max(0, this.player.damage - 28);
     this.applyStageTheme();
@@ -1520,7 +1680,7 @@ class Game {
     if (type === 'repair') this.player.damage = Math.max(0, this.player.damage - 38);
     if (type === 'bomb') this.player.bombs = Math.min(5, this.player.bombs + 1);
     if (type === 'coin') this.score += 100;
-    if (type === 'weapon') this.player.weapon = Math.min(5, this.player.weapon + 1);
+    if (type === 'weapon') this.score += 250;
     if (type === 'life') this.player.lives = Math.min(5, this.player.lives + 1);
     this.ui.message(type === 'shield' ? 'ESCUDO 5 SEGUNDOS' : this.itemTypes[type].message);
     this.audio.pickup();
@@ -1530,10 +1690,23 @@ class Game {
 
   bossAttack() {
     if (!this.boss) return;
-    const origin = this.boss.root.position;
-    for (let i = -3; i <= 3; i += 1) {
-      this.spawnEnemyBullet(origin.x + i * 0.45, origin.z + 1.3, i * 0.62, 8.0, 1.05);
+    const boss = this.boss;
+    const origin = boss.root.position;
+    boss.volley += 1;
+    const volley = boss.volley;
+    const count = Math.min(13, 7 + volley);
+    const speed = 7.4 + this.stage * 0.45 + volley * 0.38;
+    const damage = Math.min(48, 18 + this.stage * 3 + volley * 3);
+    const spreadWidth = 1.05 + Math.min(0.65, volley * 0.06);
+    for (let i = 0; i < count; i += 1) {
+      const normalized = count === 1 ? 0 : i / (count - 1) * 2 - 1;
+      this.spawnEnemyBullet(origin.x + normalized * 2.2, origin.z + 1.4, normalized * speed * spreadWidth, speed, 1.05 + volley * 0.035, damage);
     }
+    const dx = this.player.x - origin.x;
+    const dz = this.player.z - origin.z;
+    const len = Math.hypot(dx, dz) || 1;
+    this.spawnEnemyBullet(origin.x, origin.z + 1.5, dx / len * (speed + 2.0), dz / len * (speed + 2.0), 1.38 + volley * 0.035, damage + 6);
+    this.ui.message(`RAJADA ${volley}`, 600);
   }
 
   bossAimedAttack() {
@@ -1560,17 +1733,24 @@ class Game {
     if (this.keys.has('ArrowRight') || this.keys.has('KeyD')) dx += 1;
     if (this.keys.has('ArrowUp') || this.keys.has('KeyW')) dz -= 1;
     if (this.keys.has('ArrowDown') || this.keys.has('KeyS')) dz += 1;
-    if (dx || dz) {
+    const keyboardOrStick = Math.abs(dx) > 0.02 || Math.abs(dz) > 0.02;
+    if (keyboardOrStick) {
+      this.mouseControl.active = false;
       const len = Math.hypot(dx, dz) || 1;
-      this.player.targetX += dx / len * 13.8 * dt;
-      this.player.targetZ += dz / len * 5.2 * dt;
+      this.player.targetX += dx / len * 20.5 * dt;
+      this.player.targetZ += dz / len * 10.8 * dt;
+    } else if (this.mouseControl.active) {
+      this.player.targetX = this.mouseControl.x;
+      this.player.targetZ = this.mouseControl.z;
+      dx = clamp((this.player.targetX - this.player.x) * 0.18, -1, 1);
+      dz = clamp((this.player.targetZ - this.player.z) * 0.18, -1, 1);
     }
-    this.player.targetZ = clamp(this.player.targetZ, 2.5, 9.5);
-    const river = this.riverAt(this.player.z);
+    this.player.targetZ = clamp(this.player.targetZ, -5.5, 11.2);
+    const targetRiver = this.riverAt(this.player.targetZ);
     const margin = 0.95;
-    this.player.targetX = clamp(this.player.targetX, river.left + margin, river.right - margin);
-    this.player.x = lerp(this.player.x, this.player.targetX, Math.min(1, dt * 11));
-    this.player.z = lerp(this.player.z, this.player.targetZ, Math.min(1, dt * 11));
+    this.player.targetX = clamp(this.player.targetX, targetRiver.left + margin, targetRiver.right - margin);
+    this.player.x = lerp(this.player.x, this.player.targetX, Math.min(1, dt * 16));
+    this.player.z = lerp(this.player.z, this.player.targetZ, Math.min(1, dt * 16));
     this.player.invulnerable = Math.max(0, this.player.invulnerable - dt);
     this.player.shield = Math.max(0, this.player.shield - dt);
     this.shieldBubble.visible = this.player.shield > 0;
@@ -1633,9 +1813,10 @@ class Game {
             this.spawnExplosion(worldTruck.x, worldTruck.z, 0.85);
             bridge.truck.visible = false;
             this.score += 220;
-            this.player.weapon = Math.min(5, this.player.weapon + 1);
+            this.truckUpgradeEarned = true;
             this.player.damage = Math.max(0, this.player.damage - 12);
-            this.ui.message(`ARMAMENTO ${this.player.weapon}`);
+            this.ui.message('MÓDULO TRIPLO CAPTURADO', 1200);
+            this.refreshWeaponProgression();
           }
         }
       }
@@ -1696,6 +1877,7 @@ class Game {
         enemy.root.rotation.y = enemy.crossDirection > 0 ? -Math.PI / 2 : Math.PI / 2;
         enemy.root.rotation.z = Math.sin(enemy.phase * 3.5) * 0.04;
       } else if (enemy.type === 'submarine') {
+        if (enemy.root.userData.propeller) enemy.root.userData.propeller.rotation.z += dt * 9;
         if (!enemy.emerged) {
           enemy.emergeTimer -= dt;
           enemy.root.position.y = -0.24;
@@ -1857,11 +2039,11 @@ class Game {
     boss.aimedTimer -= dt;
     if (boss.attackTimer <= 0) {
       this.bossAttack();
-      boss.attackTimer = Math.max(0.42, 0.92 - this.stage * 0.045);
+      boss.attackTimer = 5.0;
     }
     if (boss.aimedTimer <= 0) {
       this.bossAimedAttack();
-      boss.aimedTimer = Math.max(1.15, 2.15 - this.stage * 0.09);
+      boss.aimedTimer = 999;
     }
     if (boss.flash > 0) {
       boss.flash -= dt;
@@ -1900,6 +2082,10 @@ class Game {
       this.spawnItem();
       this.itemSpawnTimer = rand(3.2, 5.4);
     }
+    if (!this.boss && this.lifeSpawnedStage !== this.stage && this.stageTime >= 8) {
+      this.spawnItem(null, -46, 'life');
+      this.lifeSpawnedStage = this.stage;
+    }
     this.bridgeSpawnTimer -= dt;
     if (!this.boss && this.bridgeSpawnTimer <= 0) {
       this.spawnBridge();
@@ -1918,12 +2104,12 @@ class Game {
     this.birdSpawnTimer -= dt;
     if (!this.boss && this.birdSpawnTimer <= 0) {
       this.spawnEnemy('bird');
-      this.birdSpawnTimer = rand(3.4, 6.2);
+      this.birdSpawnTimer = rand(5.0, 8.0);
     }
     this.crossingSpawnTimer -= dt;
     if (!this.boss && this.crossingSpawnTimer <= 0) {
       this.spawnEnemy(Math.random() < 0.56 ? 'helicopter' : 'boat');
-      this.crossingSpawnTimer = rand(4.5, 7.5);
+      this.crossingSpawnTimer = rand(4.0, 6.5);
     }
     if (this.stageTime > 38 && !this.boss && !this.bossSpawned) {
       this.bossSpawned = true;
