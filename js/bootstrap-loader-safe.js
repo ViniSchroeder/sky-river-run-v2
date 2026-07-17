@@ -2,22 +2,26 @@ async function loadSkyRiverRunSafe() {
   try {
     const baseUrl = new URL('./js/', window.location.href);
     const legacyLoaderUrl = new URL('bootstrap-loader.js?v=4600', baseUrl);
-    const bootstrapUrl = new URL('bootstrap.js?v=4603', baseUrl);
+    const bootstrapUrl = new URL('bootstrap.js?v=4604', baseUrl);
     const mobilePatchUrl = new URL('patches-4603.js?v=4603', baseUrl);
+    const controlPatchUrl = new URL('patches-4604.js?v=4604', baseUrl);
 
-    const [legacyResponse, bootstrapResponse, mobilePatchResponse] = await Promise.all([
+    const [legacyResponse, bootstrapResponse, mobilePatchResponse, controlPatchResponse] = await Promise.all([
       fetch(legacyLoaderUrl.href, { cache: 'no-store' }),
       fetch(bootstrapUrl.href, { cache: 'no-store' }),
       fetch(mobilePatchUrl.href, { cache: 'no-store' }),
+      fetch(controlPatchUrl.href, { cache: 'no-store' }),
     ]);
 
     if (!legacyResponse.ok) throw new Error(`Falha ao carregar patches anteriores: HTTP ${legacyResponse.status}`);
     if (!bootstrapResponse.ok) throw new Error(`Falha ao carregar bootstrap.js: HTTP ${bootstrapResponse.status}`);
     if (!mobilePatchResponse.ok) throw new Error(`Falha ao carregar ajustes móveis: HTTP ${mobilePatchResponse.status}`);
+    if (!controlPatchResponse.ok) throw new Error(`Falha ao carregar calibração 4.6.4: HTTP ${controlPatchResponse.status}`);
 
     const legacySource = await legacyResponse.text();
     let source = await bootstrapResponse.text();
     const mobilePatches = await mobilePatchResponse.text();
+    const controlPatches = await controlPatchResponse.text();
 
     const assignmentMarker = 'const extraPatches = ';
     const assignmentIndex = legacySource.indexOf(assignmentMarker);
@@ -73,10 +77,10 @@ async function loadSkyRiverRunSafe() {
     const insertionIndex = source.indexOf(insertionMarker);
     if (insertionIndex < 0) throw new Error('Ponto seguro de injeção não encontrado');
 
-    source = source.slice(0, insertionIndex) + extraPatches + '\n\n' + hotfixPatches + '\n\n' + mobilePatches + '\n\n    ' + source.slice(insertionIndex);
-    source = source.replaceAll('v=4500', 'v=4603');
+    source = source.slice(0, insertionIndex) + extraPatches + '\n\n' + hotfixPatches + '\n\n' + mobilePatches + '\n\n' + controlPatches + '\n\n    ' + source.slice(insertionIndex);
+    source = source.replaceAll('v=4500', 'v=4604');
     source = source.replaceAll('import.meta.url', JSON.stringify(bootstrapUrl.href));
-    source += '\n//# sourceURL=sky-river-run-bootstrap-safe-4603.js';
+    source += '\n//# sourceURL=sky-river-run-bootstrap-safe-4604.js';
 
     const blobUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
     try {
@@ -85,7 +89,7 @@ async function loadSkyRiverRunSafe() {
       URL.revokeObjectURL(blobUrl);
     }
   } catch (error) {
-    console.error('Falha ao carregar Sky River Run 4.6.3:', error);
+    console.error('Falha ao carregar Sky River Run 4.6.4:', error);
     const menu = document.querySelector('#menu .menu-card');
     if (menu) {
       const warning = document.createElement('p');
