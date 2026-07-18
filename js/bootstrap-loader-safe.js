@@ -2,14 +2,15 @@ async function loadSkyRiverRunSafe() {
   try {
     const baseUrl = new URL('./js/', window.location.href);
     const legacyLoaderUrl = new URL('bootstrap-loader.js?v=4600', baseUrl);
-    const bootstrapUrl = new URL('bootstrap.js?v=4607', baseUrl);
+    const bootstrapUrl = new URL('bootstrap.js?v=4608', baseUrl);
     const mobilePatchUrl = new URL('patches-4603.js?v=4603', baseUrl);
     const controlPatchUrl = new URL('patches-4604.js?v=4604', baseUrl);
     const joystickFixUrl = new URL('patches-4605.js?v=4605', baseUrl);
     const stagePatchUrl = new URL('patches-4606.js?v=4606', baseUrl);
     const aerialSpawnPatchUrl = new URL('patches-4607.js?v=4607', baseUrl);
+    const mobileCorePatchUrl = new URL('patches-4608.js?v=4608', baseUrl);
 
-    const [legacyResponse, bootstrapResponse, mobilePatchResponse, controlPatchResponse, joystickFixResponse, stagePatchResponse, aerialSpawnPatchResponse] = await Promise.all([
+    const [legacyResponse, bootstrapResponse, mobilePatchResponse, controlPatchResponse, joystickFixResponse, stagePatchResponse, aerialSpawnPatchResponse, mobileCorePatchResponse] = await Promise.all([
       fetch(legacyLoaderUrl.href, { cache: 'no-store' }),
       fetch(bootstrapUrl.href, { cache: 'no-store' }),
       fetch(mobilePatchUrl.href, { cache: 'no-store' }),
@@ -17,6 +18,7 @@ async function loadSkyRiverRunSafe() {
       fetch(joystickFixUrl.href, { cache: 'no-store' }),
       fetch(stagePatchUrl.href, { cache: 'no-store' }),
       fetch(aerialSpawnPatchUrl.href, { cache: 'no-store' }),
+      fetch(mobileCorePatchUrl.href, { cache: 'no-store' }),
     ]);
 
     if (!legacyResponse.ok) throw new Error(`Falha ao carregar patches anteriores: HTTP ${legacyResponse.status}`);
@@ -26,6 +28,7 @@ async function loadSkyRiverRunSafe() {
     if (!joystickFixResponse.ok) throw new Error(`Falha ao carregar correção 4.6.5: HTTP ${joystickFixResponse.status}`);
     if (!stagePatchResponse.ok) throw new Error(`Falha ao carregar atualização 4.6.6: HTTP ${stagePatchResponse.status}`);
     if (!aerialSpawnPatchResponse.ok) throw new Error(`Falha ao carregar atualização 4.6.7: HTTP ${aerialSpawnPatchResponse.status}`);
+    if (!mobileCorePatchResponse.ok) throw new Error(`Falha ao carregar arquitetura móvel 4.6.8: HTTP ${mobileCorePatchResponse.status}`);
 
     const legacySource = await legacyResponse.text();
     let source = await bootstrapResponse.text();
@@ -34,6 +37,7 @@ async function loadSkyRiverRunSafe() {
     const joystickFixPatches = await joystickFixResponse.text();
     const stagePatches = await stagePatchResponse.text();
     const aerialSpawnPatches = await aerialSpawnPatchResponse.text();
+    const mobileCorePatches = await mobileCorePatchResponse.text();
 
     const assignmentMarker = 'const extraPatches = ';
     const assignmentIndex = legacySource.indexOf(assignmentMarker);
@@ -96,11 +100,12 @@ async function loadSkyRiverRunSafe() {
       + controlPatches + '\n\n'
       + joystickFixPatches + '\n\n'
       + stagePatches + '\n\n'
-      + aerialSpawnPatches + '\n\n    '
+      + aerialSpawnPatches + '\n\n'
+      + mobileCorePatches + '\n\n    '
       + source.slice(insertionIndex);
-    source = source.replaceAll('v=4500', 'v=4607');
+    source = source.replaceAll('v=4500', 'v=4608');
     source = source.replaceAll('import.meta.url', JSON.stringify(bootstrapUrl.href));
-    source += '\n//# sourceURL=sky-river-run-bootstrap-safe-4607.js';
+    source += '\n//# sourceURL=sky-river-run-bootstrap-safe-4608.js';
 
     const blobUrl = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
     try {
@@ -109,7 +114,7 @@ async function loadSkyRiverRunSafe() {
       URL.revokeObjectURL(blobUrl);
     }
   } catch (error) {
-    console.error('Falha ao carregar Sky River Run 4.6.7:', error);
+    console.error('Falha ao carregar Sky River Run 4.6.8:', error);
     const menu = document.querySelector('#menu .menu-card');
     if (menu) {
       const warning = document.createElement('p');
